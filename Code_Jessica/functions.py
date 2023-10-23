@@ -112,3 +112,141 @@ def get_turn_penalty_dict(G, left_turn_penalty = 30, right_turn_penalty = 10, u_
                 penalty[(u, v, m)] = 0 # Straight
   return penalty
 # time penalty and turn degree referencing r5: https://github.com/conveyal/r5/blob/00e6c8ecffbd0ef5173434b224cd23f3877cdda2/src/main/java/com/conveyal/r5/streets/BasicTraversalTimeCalculator.java#L23
+
+
+
+# Source: https://github.com/maxtmng/shortest_path_turn_penalty/
+## used the function without any modification
+import networkx as nx
+from heapq import heappop, heappush
+from warnings import warn
+from itertools import count
+def shortest_path_turn_penalty(G, source, target, weight="weight", penalty={}, next_node = None):
+  """
+    Uses Dijkstra's algorithm to find the shortest weighted paths to one or multiple targets with turn penalty.
+    This function is adapted from networkx.algorithms.shortest_paths.weighted._dijkstra_multisource.
+    The turn penalty implementation is based on:
+    Ziliaskopoulos, A.K., Mahmassani, H.S., 1996. A note on least time path computation considering delays and prohibitions for intersection movements. Transportation Research Part B: Methodological 30, 359–367. https://doi.org/10.1016/0191-2615(96)00001-X
+    Parameters
+    ----------
+    G : NetworkX graph
+    source : non-empty iterable of nodes
+        Starting nodes for paths. If this is just an iterable containing
+        a single node, then all paths computed by this function will
+        start from that node. If there are two or more nodes in this
+        iterable, the computed paths may begin from any one of the start
+        nodes.
+    target : node label, single node or a list
+        Ending node (or a list of ending nodes) for path. Search is halted when any target is found.
+    weight: function
+        Function with (u, v, data) input that returns that edge's weight
+        or None to indicate a hidden edge
+    penalty : dict, optional (default={})
+        Dictionary containing turn penalties. The key is a tuple (u, v, m) where
+        u, v are the nodes of the current edge and m is the next node.
+    next_node : node, optional (default=None)
+        Next node to consider from the source.
+    Returns
+    -------
+    list of nodes
+        Path from source to target.
+    Raises
+    ------
+    NodeNotFound
+        If the source or target is not in `G`.
+    ValueError
+        If contradictory paths are found due to negative weights.
+    """  
+  G_succ = G._adj  # For speed-up (and works for both directed and undirected graphs)
+  weight = nx.algorithms.shortest_paths.weighted._weight_function(G, weight)
+  push = heappush
+  pop = heappop
+  dist = {}  # dictionary of final distances
+  paths = {source: [source]}
+  target_list = [target] if not isinstance(target, list) else target
+  reached_target = None
+  seen = {}
+  c = count()
+  fringe = []
+  seen[source] = {}
+  if next_node is None:
+      for m,_ in G_succ[source].items():
+          seen[source][m] = 0
+          push(fringe, (0, next(c), source, m))
+  else:
+      push(fringe, (0, next(c), source, next_node))
+  while fringe:
+      (d, _, v, m) = pop(fringe)
+      u = m
+      if v in dist:
+          if u in dist[v]:
+              continue  # already searched this node.
+      else:
+          dist[v] = {}
+      dist[v][u] = d
+      if v in target_list:
+          reached_target = v
+          break
+      e = G[v][u]
+      for m in G_succ[u]:
+          cost = weight(v, u, e)
+          if (v,u,m) in penalty:
+              cost += penalty[v,u,m]
+
+          if cost is None:
+              continue
+          vu_dist = dist[v][u] + cost
+          if u in dist:
+              if m in dist[u]:
+                  u_dist = dist[u][m]
+                  if vu_dist < u_dist:
+                      raise ValueError("Contradictory paths found:", "negative weights?")
+          elif u not in seen or m not in seen[u] or vu_dist < seen[u][m]:
+              if u not in seen:
+                  seen[u] = {}
+              seen[u][m] = vu_dist
+              push(fringe, (vu_dist, next(c), u, m))
+              if paths is not None:
+                  paths[u] = paths[v] + [u]
+  # The optional predecessor and path dictionaries can be accessed
+  # by the caller via the pred and paths objects passed as arguments.
+  return paths[reached_target]
+
+
+
+
+import osmnx as ox
+def get_routes_from_gdfs(G, origins_gdf, destinations_gdf, **kwargs):
+  """
+  Calculate routes between origins and destinations using a graph with optional turn penalties.
+  This function calculates routes between a set of origins and destinations using a given road network graph. 
+  It considers optional turn penalties when finding the routes.
+  
+  Parameters
+  ----------
+  G : networkx.MultiDiGraph
+      A directed graph representing a road network, typically created using OSMnx.
+  origins_gdf : geopandas.GeoDataFrame
+      A GeoDataFrame containing the origin points with geometry information.
+  destinations_gdf : geopandas.GeoDataFrame
+      A GeoDataFrame containing the destination points with geometry information.
+  **kwargs : keyword arguments
+      Additional keyword arguments to be passed to the `shortest_path_turn_penalty` function.
+      These can include 'weight' to specify the edge weight attribute and 'penalty' to provide a dictionary of turn penalties.
+
+  Returns
+  -------
+  routes : list
+      A list of routes, where each route is represented as a list of nodes from the origin to the destination.
+  """
+  routes = []
+  for i in range(len(origins_gdf)):
+      # find nearest nodes
+      orig_node = ox.distance.nearest_nodes(G, origins_gdf.iloc[i]['geometry'].x, origins_gdf.iloc[i]['geometry'].y)
+      dest_node = ox.distance.nearest_nodes(G, destinations_gdf.iloc[i]['geometry'].x, destinations_gdf.iloc[i]['geometry'].y)
+        
+      # find routes while considering penalties
+      route = shortest_path_turn_penalty(G, orig_node, dest_node, **kwargs)
+      routes.append(route)
+
+  return routes
