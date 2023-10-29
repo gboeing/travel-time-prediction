@@ -1,6 +1,6 @@
 
-def add_edge_traffic_times(G, traffic_signals_time = 30, stop_time = 15, turning_circle_time = 5, crossing_time = 5, give_way_time = 5, mini_roundabout_time = 5):
-  
+def add_edge_traffic_times(G, traffic_signals_time = 2, stop_time = 2, turning_circle_time = 0, crossing_time = 1.5, give_way_time = 1.5, mini_roundabout_time = 1.5):
+
   """
   Calculate traffic time penalties for different features of edge attributes in a graph.
 
