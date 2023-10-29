@@ -162,3 +162,5 @@ cython_debug/
 
 
 Code_Jessica/cache
+
+data/config.json
