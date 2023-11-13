@@ -1,0 +1,1 @@
+{"destination_addresses": ["412 Conway Ct, Glendora, CA 91741, USA"], "origin_addresses": ["3636 Ponderosa Way, Palmdale, CA 93550, USA"], "rows": [{"elements": [{"distance": {"text": "125 km", "value": 125287}, "duration": {"text": "1 hour 16 mins", "value": 4534}, "duration_in_traffic": {"text": "1 hour 45 mins", "value": 6321}, "status": "OK"}]}], "status": "OK"}

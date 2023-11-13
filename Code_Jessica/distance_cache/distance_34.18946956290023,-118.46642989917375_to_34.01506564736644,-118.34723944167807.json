@@ -1,0 +1,1 @@
+{"destination_addresses": ["4506 Santa Rosalia Dr, Los Angeles, CA 90008, USA"], "origin_addresses": ["6525 N Sepulveda Blvd, Van Nuys, CA 91406, USA"], "rows": [{"elements": [{"distance": {"text": "31.6 km", "value": 31616}, "duration": {"text": "27 mins", "value": 1629}, "duration_in_traffic": {"text": "43 mins", "value": 2599}, "status": "OK"}]}], "status": "OK"}

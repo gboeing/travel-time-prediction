@@ -1,0 +1,1 @@
+{"destination_addresses": ["14703 S Castlegate Ave, Compton, CA 90221, USA"], "origin_addresses": ["5402 Chesebro Rd, Agoura Hills, CA 91301, USA"], "rows": [{"elements": [{"distance": {"text": "79.9 km", "value": 79903}, "duration": {"text": "54 mins", "value": 3223}, "duration_in_traffic": {"text": "1 hour 48 mins", "value": 6470}, "status": "OK"}]}], "status": "OK"}

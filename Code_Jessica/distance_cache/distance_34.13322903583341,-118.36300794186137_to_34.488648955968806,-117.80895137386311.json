@@ -1,0 +1,1 @@
+{"destination_addresses": ["Llano Cutoff, Llano, CA 93544, USA"], "origin_addresses": ["3743 Fredonia Dr, Los Angeles, CA 90068, USA"], "rows": [{"elements": [{"distance": {"text": "111 km", "value": 110509}, "duration": {"text": "1 hour 12 mins", "value": 4327}, "duration_in_traffic": {"text": "1 hour 19 mins", "value": 4750}, "status": "OK"}]}], "status": "OK"}

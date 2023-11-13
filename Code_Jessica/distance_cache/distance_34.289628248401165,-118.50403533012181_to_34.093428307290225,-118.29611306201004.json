@@ -1,0 +1,1 @@
+{"destination_addresses": ["Edgemont & Lexington Ave., Los Angeles, CA 90029, USA"], "origin_addresses": ["12011 Bradford Pl, Granada Hills, CA 91344, USA"], "rows": [{"elements": [{"distance": {"text": "33.5 km", "value": 33469}, "duration": {"text": "26 mins", "value": 1589}, "duration_in_traffic": {"text": "30 mins", "value": 1789}, "status": "OK"}]}], "status": "OK"}

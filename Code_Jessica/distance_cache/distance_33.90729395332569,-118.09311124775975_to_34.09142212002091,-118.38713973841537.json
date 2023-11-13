@@ -1,0 +1,1 @@
+{"destination_addresses": ["8967 Shoreham Dr, Los Angeles, CA 90069, USA"], "origin_addresses": ["13627 Longworth Ave, Norwalk, CA 90650, USA"], "rows": [{"elements": [{"distance": {"text": "48.4 km", "value": 48388}, "duration": {"text": "50 mins", "value": 2994}, "duration_in_traffic": {"text": "1 hour 5 mins", "value": 3912}, "status": "OK"}]}], "status": "OK"}

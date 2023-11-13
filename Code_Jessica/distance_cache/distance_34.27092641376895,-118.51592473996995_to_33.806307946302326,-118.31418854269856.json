@@ -1,0 +1,1 @@
+{"destination_addresses": ["1973 241st St, Lomita, CA 90717, USA"], "origin_addresses": ["17508 Ludlow St, Granada Hills, CA 91344, USA"], "rows": [{"elements": [{"distance": {"text": "63.8 km", "value": 63792}, "duration": {"text": "49 mins", "value": 2931}, "duration_in_traffic": {"text": "1 hour 22 mins", "value": 4914}, "status": "OK"}]}], "status": "OK"}

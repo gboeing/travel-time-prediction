@@ -1,0 +1,1 @@
+{"destination_addresses": ["7817 S Central Ave, Los Angeles, CA 90001, USA"], "origin_addresses": ["654 W Elberon Ave, San Pedro, CA 90731, USA"], "rows": [{"elements": [{"distance": {"text": "27.9 km", "value": 27866}, "duration": {"text": "24 mins", "value": 1466}, "duration_in_traffic": {"text": "31 mins", "value": 1856}, "status": "OK"}]}], "status": "OK"}

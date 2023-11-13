@@ -1,0 +1,1 @@
+{"destination_addresses": ["891 W 2nd St, Pomona, CA 91766, USA"], "origin_addresses": ["332 W Meda Ave, Glendora, CA 91741, USA"], "rows": [{"elements": [{"distance": {"text": "19.5 km", "value": 19507}, "duration": {"text": "19 mins", "value": 1118}, "duration_in_traffic": {"text": "23 mins", "value": 1374}, "status": "OK"}]}], "status": "OK"}

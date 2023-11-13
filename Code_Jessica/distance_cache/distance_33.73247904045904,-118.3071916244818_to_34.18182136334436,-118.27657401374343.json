@@ -1,0 +1,1 @@
+{"destination_addresses": ["1818 W Mountain St, Glendale, CA 91201, USA"], "origin_addresses": ["1366 W 13th St, San Pedro, CA 90732, USA"], "rows": [{"elements": [{"distance": {"text": "57.6 km", "value": 57567}, "duration": {"text": "51 mins", "value": 3034}, "duration_in_traffic": {"text": "1 hour 14 mins", "value": 4462}, "status": "OK"}]}], "status": "OK"}
