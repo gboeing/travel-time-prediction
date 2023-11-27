@@ -171,6 +171,7 @@ def calculateRoute(apikey, orig: Location, dest: Location, traffic='TRAFFIC_UNAW
 
 
 
+import polyline
 import pandas as pd
 def createDataFrameFromResults(route_results):
     """
@@ -197,13 +198,13 @@ def createDataFrameFromResults(route_results):
             duration = route.get('duration', None)
             if duration is not None:
                 duration = int(duration.rstrip('s'))  # Remove 's' and convert to int
-            polyline = route.get('polyline', {}).get('encodedPolyline', None)
+            decoded_polyline = polyline.decode(route.get('polyline', {}).get('encodedPolyline', None))
 
             # Append a dictionary of the route data to the route_data list
             route_data.append({
                 'distance': distance,
                 'duration': duration,
-                'polyline': polyline
+                'polyline': decoded_polyline
             })
 
     # Convert the route_data list of dictionaries to a DataFrame

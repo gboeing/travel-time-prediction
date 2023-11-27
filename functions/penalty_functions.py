@@ -11,17 +11,17 @@ def add_edge_traffic_times(G, traffic_signals_time = 2, stop_time = 2, turning_c
   G : networkx.MultiGraph
       An undirected, unprojected graph with 'bearing' attributes on each edge.
   traffic_signals_time : int, optional
-      The time penalty for passing through a traffic signal-controlled intersection (default: 30).
+      The time penalty for passing through a traffic signal-controlled intersection (default: 2).
   stop_time : int, optional
-      The time penalty for stopping at a stop sign or stop-controlled intersection (default: 15).
+      The time penalty for stopping at a stop sign or stop-controlled intersection (default: 2).
   turning_circle_time : int, optional
-      The time penalty for navigating a turning circle or roundabout (default: 5).
+      The time penalty for navigating a turning circle or roundabout (default: 0).
   crossing_time : int, optional
-      The time penalty for crossing a pedestrian crossing (default: 5).
+      The time penalty for crossing a pedestrian crossing (default: 1.5).
   give_way_time : int, optional
-      The time penalty for yielding at a give-way or yield sign (default: 5).
+      The time penalty for yielding at a give-way or yield sign (default: 1.5).
   mini_roundabout_time : int, optional
-    The time penalty for navigating a mini roundabout (default: 5).
+    The time penalty for navigating a mini roundabout (default: 1.5).
 
   Returns
   -------
