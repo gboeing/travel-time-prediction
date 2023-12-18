@@ -1,4 +1,3 @@
-
 def add_edge_traffic_times(G, traffic_signals_time = 2, stop_time = 2, turning_circle_time = 0, crossing_time = 1.5, give_way_time = 1.5, mini_roundabout_time = 1.5):
 
   """
@@ -12,17 +11,17 @@ def add_edge_traffic_times(G, traffic_signals_time = 2, stop_time = 2, turning_c
   G : networkx.MultiGraph
       An undirected, unprojected graph with 'bearing' attributes on each edge.
   traffic_signals_time : int, optional
-      The time penalty for passing through a traffic signal-controlled intersection (default: 30).
+      The time penalty for passing through a traffic signal-controlled intersection (default: 2).
   stop_time : int, optional
-      The time penalty for stopping at a stop sign or stop-controlled intersection (default: 15).
+      The time penalty for stopping at a stop sign or stop-controlled intersection (default: 2).
   turning_circle_time : int, optional
-      The time penalty for navigating a turning circle or roundabout (default: 5).
+      The time penalty for navigating a turning circle or roundabout (default: 0).
   crossing_time : int, optional
-      The time penalty for crossing a pedestrian crossing (default: 5).
+      The time penalty for crossing a pedestrian crossing (default: 1.5).
   give_way_time : int, optional
-      The time penalty for yielding at a give-way or yield sign (default: 5).
+      The time penalty for yielding at a give-way or yield sign (default: 1.5).
   mini_roundabout_time : int, optional
-    The time penalty for navigating a mini roundabout (default: 5).
+    The time penalty for navigating a mini roundabout (default: 1.5).
 
   Returns
   -------
@@ -54,7 +53,6 @@ def add_edge_traffic_times(G, traffic_signals_time = 2, stop_time = 2, turning_c
     # add 'total_time' attribute to the edge
     G[u][v][key]['total_time'] = data.get('travel_time') + traffic_time
   return G
-
 
 
 
@@ -122,6 +120,7 @@ from heapq import heappop, heappush
 from warnings import warn
 from itertools import count
 def shortest_path_turn_penalty(G, source, target, weight="weight", penalty={}, next_node = None):
+    
   """
     Uses Dijkstra's algorithm to find the shortest weighted paths to one or multiple targets with turn penalty.
     This function is adapted from networkx.algorithms.shortest_paths.weighted._dijkstra_multisource.
@@ -157,6 +156,7 @@ def shortest_path_turn_penalty(G, source, target, weight="weight", penalty={}, n
     ValueError
         If contradictory paths are found due to negative weights.
     """  
+
   G_succ = G._adj  # For speed-up (and works for both directed and undirected graphs)
   weight = nx.algorithms.shortest_paths.weighted._weight_function(G, weight)
   push = heappush
@@ -239,6 +239,7 @@ def get_routes_from_gdfs(G, origins_gdf, destinations_gdf, **kwargs):
   routes : list
       A list of routes, where each route is represented as a list of nodes from the origin to the destination.
   """
+
   routes = []
   for i in range(len(origins_gdf)):
       # find nearest nodes
