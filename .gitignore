@@ -165,6 +165,4 @@ Code_Jessica/cache
 Code_Wendy/cache
 
 data/config.json
-data/
-!data/destinations_gdf.csv
-!data/origins_gdf.csv
+
