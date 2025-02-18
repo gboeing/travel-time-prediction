@@ -1,0 +1,7 @@
+name: ttp
+channels:
+  - conda-forge
+dependencies:
+  - jupyterlab
+  - osmnx
+  - pre-commit
