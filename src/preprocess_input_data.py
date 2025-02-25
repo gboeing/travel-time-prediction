@@ -1,8 +1,9 @@
 """Preprocess the input data."""
 
-import constants
 import geopandas as gpd
 import osmnx as ox
+
+import constants
 
 
 def get_gdf_inputs() -> tuple[
