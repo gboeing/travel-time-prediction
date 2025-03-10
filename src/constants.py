@@ -13,8 +13,10 @@ LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH = INTERMEDIATE_DIR + "la_clip_convex_strong
 CONVEX_STRONGLY_ATTRIBUTES_FILE_PATH = (
     INTERMEDIATE_DIR + "nodes_candidate_convex_strongly_attributes.csv"
 )
+CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH = (
+    INTERMEDIATE_DIR + "nodes_candidate_convex_strongly_attributes.pickle"
+)
 SAMPLED_OD_FILE_PATH = INTERMEDIATE_DIR + "OD_5m_strong.csv"
 SAMPLED_OD_ALL_UBER_FILE_PATH = INTERMEDIATE_DIR + "OD_pairs_uber_all_strongly_119w.csv"
-SAMPLED_OD_UBER_1m_FILE_PATH = INTERMEDIATE_DIR + "OD_pairs_uber_1m_strongly.csv"
-NOT_SAMPLED_OD_UBER_1m_FILE_PATH = INTERMEDIATE_DIR + "OD_pairs_uber_remains_strongly_19w.csv"
-SAMPLED_OD_NOT_UBER_1m_FILE_PATH = INTERMEDIATE_DIR + "OD_pairs_uber_4m_remains_strongly.csv"
+SAMPLED_OD_SAMPLE_HOUR_FILE_PATH = INTERMEDIATE_DIR + "OD3am.csv"
+SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH = INTERMEDIATE_DIR + "OD3am.pickle"
