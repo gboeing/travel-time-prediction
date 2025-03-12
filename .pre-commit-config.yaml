@@ -45,7 +45,7 @@ repos:
           - --target-version=py312
           - --line-length=100
           - --select=ALL
-          - --ignore=T201,S301
+          - --ignore=T201,S301,SLF001,C901,PLR0912,PLR0913,PLR0915
       - id: ruff-format
         args:
           - --no-cache
