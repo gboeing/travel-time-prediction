@@ -6,10 +6,14 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import geopandas as gpd
 import pandas as pd
 import polyline
 import pytz
 import requests
+from shapely.geometry import Point
+
+import constants
 
 _CACHE_FOLDER = "data/route_cache"
 Path.makedirs(_CACHE_FOLDER, exist_ok=True)
@@ -379,3 +383,59 @@ def fetch_all_routes(
 
     # Sort the results based on the index key
     return [data for _, data in sorted(results_with_keys, key=lambda x: x[0])]
+
+
+def route_api_call(api_key: str, departure_time: tuple[int]) -> pd.DataFrame:
+    """Call Google API with AIP key to get route information between two locations.
+
+    Parameters
+    ----------
+    api_key : str
+        A string representing the API key for accessing the Google Routes API.
+    departure_time : Tuple[int]
+        A single departure time in the format (year, month, day, hour, minute, second).
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the sampled OD pairs with route information.
+
+    """
+    od_pairs = pd.read_csv(constants.SAMPLED_OD_SAMPLE_HOUR_FILE_PATH)
+
+    origins = od_pairs[["oid", "oy", "ox"]]
+    destinations = od_pairs[["did", "dy", "dx"]]
+
+    # convert origins, destinations to geodataframe
+    origins = gpd.GeoDataFrame(
+        origins,
+        geometry=[Point(xy) for xy in zip(origins.ox, origins.oy, strict=False)],
+    )
+    destinations = gpd.GeoDataFrame(
+        destinations,
+        geometry=[Point(xy) for xy in zip(destinations.dx, destinations.dy, strict=False)],
+    )
+
+    origins_location = parse_dataframe_to_locations(origins)
+    destinations_location = parse_dataframe_to_locations(destinations)
+
+    route_results = fetch_all_routes(
+        api_key,
+        origins_location,
+        destinations_location,
+        "TRAFFIC_AWARE",
+        [departure_time],
+    )
+    empty_index = [index for index, result in enumerate(route_results) if not result]
+    od_pairs = od_pairs.drop(empty_index)
+
+    route_results_df = create_dataframe_from_results(route_results).reset_index(drop=True)
+    od_pairs = od_pairs.reset_index(drop=True)
+
+    combined_df = pd.concat([od_pairs, route_results_df], axis=1)
+    combined_df.to_csv(constants.SAMPLED_OD_ROUTES_API_FILE_PATH)
+    return combined_df
+
+
+if __name__ == "__main__":
+    route_api_call("API_KEY", (2024, 2, 1, 3, 0, 0))
