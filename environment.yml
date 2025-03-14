@@ -6,3 +6,4 @@ dependencies:
   - osmnx
   - pre-commit
   - polyline
+  - statsmodels

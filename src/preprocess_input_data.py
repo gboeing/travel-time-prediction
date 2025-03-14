@@ -2,6 +2,7 @@
 
 import pickle
 from pathlib import Path
+from typing import Optional
 
 import geopandas as gpd
 import osmnx as ox
@@ -87,7 +88,7 @@ def get_annotated_graph(
     Nodes of query street network with census and uber tracts ID attached.
 
     """
-    if Path.exists(constants.CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH):
+    if Path(constants.CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH).is_file():
         with Path.open(constants.CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH, "rb") as file:
             return pickle.load(file)
 
@@ -102,7 +103,7 @@ def get_annotated_graph(
     ]
 
     convex_polygon = gpd.GeoDataFrame(geometry=polygon).iloc[0]["geometry"]
-    graph = ox.graph_from_polygon(convex_polygon, network_type="drive")
+    graph = ox.graph_from_polygon(convex_polygon, simplify=False, network_type="drive")
 
     # Get strongly connected graph
     connected_graph = ox.truncate.largest_component(graph, strongly=True)
@@ -114,7 +115,7 @@ def get_annotated_graph(
     gdf_proj["x"] = gdf_proj["geometry"].x
     gdf_proj["y"] = gdf_proj["geometry"].y
 
-    # Attach information on
+    # Attach census tract GEOID and uber tract ID to the nodes
     selected_cols = ["osmid", "x", "y", "highway", "street_count", "ref", "geometry", "GEOID"]
     uber_only_cols = ["MOVEMENT_ID", "TRACT"]
     gdf_proj_tract_origin = gpd.sjoin(gdf_proj, ca_tract_gdf, how="left", predicate="within")[
@@ -135,7 +136,7 @@ def get_annotated_graph(
 
 def sample_od_pairs(
     gdf_proj_tract_uber: gpd.GeoDataFrame,
-    sample_size: int,
+    sample_size: Optional[int],
     sample_hour: int,
 ) -> gpd.GeoDataFrame:
     """Sample OD pairs intersected with uber movement data from the given GeoDataFrame.
@@ -154,18 +155,18 @@ def sample_od_pairs(
     Sampled ID pairs that in the uber movement with uber travel time attached.
 
     """
-    if Path.exists(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH):
+    if Path(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH).is_file():
         with Path.open(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH, "rb") as file:
             return pickle.load(file)
 
     # Oversample to be filtered later
     origin = (
-        gdf_proj_tract_uber.sample(sample_size * 125, random_state=123, replace=True)
+        gdf_proj_tract_uber.sample(5000000, random_state=123, replace=True)
         .copy()
         .reset_index(drop=True)
     )
     destination = (
-        gdf_proj_tract_uber.sample(sample_size * 125, random_state=321, replace=True)
+        gdf_proj_tract_uber.sample(5000000, random_state=321, replace=True)
         .copy()
         .reset_index(drop=True)
     )
@@ -197,7 +198,7 @@ def sample_od_pairs(
     od_pairs_uber = sampled_od_pairs[sampled_od_pairs["uber_OD"].isin(unique_od)]
     # Save all the sampled 1,197,651 OD pairs that have a reference in uber movement 2020 to csv
     od_pairs_uber.to_csv(constants.SAMPLED_OD_ALL_UBER_FILE_PATH)
-
+    # deduplicate
     od_pairs_uber_dedup = od_pairs_uber.drop_duplicates(subset=["oid", "did"], keep="first")
 
     uber_2020_travel_time["uber_OD"] = list(
@@ -209,9 +210,19 @@ def sample_od_pairs(
     # Merge sampled OD pairs with uber movement travel time result
     uber_dedup_merge = od_pairs_uber_dedup.merge(uber_2020_travel_time, how="left", on="uber_OD")
 
+    # If an OD pairs have multiple hour of day travel time, sample one hour of day
+    uber_dedup_merge_sample = (
+        uber_dedup_merge.groupby(["oid", "did"])
+        .apply(lambda x: x.sample(1, random_state=123))
+        .reset_index(drop=True)
+    )
+
     sampled_hour_df = (
-        uber_dedup_merge[uber_dedup_merge["hod"] == sample_hour]
-        .sample(sample_size, random_state=123)
+        uber_dedup_merge_sample[uber_dedup_merge_sample["hod"] == sample_hour]
+        .sample(
+            n=len(uber_dedup_merge_sample) if sample_size is None else sample_size,
+            random_state=123,
+        )
         .copy()
     )
     sampled_hour_df.to_csv(constants.SAMPLED_OD_SAMPLE_HOUR_FILE_PATH)
@@ -224,4 +235,4 @@ if __name__ == "__main__":
     la_ucdb, la_tract, ca_tract, uber_tract = get_gdf_inputs()
     la_convex = create_convex_hull(la_ucdb, la_tract)
     gdf_proj_tract = get_annotated_graph(la_convex, ca_tract, uber_tract)
-    sample_od_pairs(gdf_proj_tract, 40000, 3)
+    sample_od_pairs(gdf_proj_tract, None, 3)

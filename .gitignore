@@ -166,3 +166,4 @@ cython_debug/
 # Data file
 data/intermediate
 data/input
+/data/output

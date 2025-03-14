@@ -372,6 +372,7 @@ def shortest_path_turn_penalty(
                     paths[u] = paths[v] + [u]
     # The optional predecessor and path dictionaries can be accessed
     # by the caller via the pred and paths objects passed as arguments.
+    print("Reached target: ", reached_target)
     return paths[reached_target]
 
 
@@ -387,11 +388,11 @@ def calculate(
     hod: int,
     uber_time: float,
     algorithm: str = "freeflow",
-    left_turn_penalty: float = 30,
-    slight_left_turn_penalty: float = 10,
-    right_turn_penalty: float = 15,
-    slight_right_turn_penalty: float = 5,
-    u_turn_penalty: float = 50,
+    left_turn_penalty: float = 0,
+    slight_left_turn_penalty: float = 0,
+    right_turn_penalty: float = 0,
+    slight_right_turn_penalty: float = 0,
+    u_turn_penalty: float = 0,
 ) -> tuple:
     """Calculate trip distance and travel time of an origin and destination.
 
@@ -464,7 +465,7 @@ def calculate(
         elif algorithm == "shortest_distance":
             route = shortest_path_turn_penalty(graph, source, target, weight="length", penalty=None)
 
-        route_edges = ox.utils_graph.route_to_gdf(graph, route)
+        route_edges = ox.routing.route_to_gdf(graph, route)
         signal_count = len(route_edges[route_edges["traffic_control"] == "traffic_signals"])
         stop_count = len(route_edges[route_edges["traffic_control"] == "stop"])
         crossing_count = len(route_edges[route_edges["traffic_control"] == "crossing"])
@@ -518,8 +519,10 @@ def calculate(
         slight_right_count = len(route_index[route_index["turn_type"] == "slight_right_turn"])
         u_count = len(route_index[route_index["turn_type"] == "u_turn"])
 
-        travel_time = sum(ox.utils_graph.route_to_gdf(graph, route, "travel_time")["travel_time"])
-        total_time = sum(ox.utils_graph.route_to_gdf(graph, route, "total_time")["total_time"])
+        travel_time = sum(
+            ox.routing.route_to_gdf(graph, route, weight="travel_time")["travel_time"],
+        )
+        total_time = sum(ox.routing.route_to_gdf(graph, route, weight="total_time")["total_time"])
         total_time_with_turn_penalty = (
             total_time
             + left_turn_penalty * left_count
@@ -528,7 +531,7 @@ def calculate(
             + slight_right_turn_penalty * slight_right_count
             + u_turn_penalty * u_count
         )
-        distance = sum(ox.utils_graph.route_to_gdf(graph, route, "length")["length"])
+        distance = sum(ox.routing.route_to_gdf(graph, route, weight="length")["length"])
 
     except ValueError:
         # If the path is unsolvable, return -1, -1
@@ -582,6 +585,7 @@ def run() -> None:
 
     """
     # number of cpus used for running
+
     cpus = mp.cpu_count() - 2
 
     # set up the traffic control penalties (in seconds)
@@ -614,7 +618,7 @@ def run() -> None:
     )
 
     # choose to calculate the penalized routing
-    routing_algorithm = "penalized"
+    routing_algorithm = "freeflow"
     args = (
         (
             graph,

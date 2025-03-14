@@ -2,6 +2,7 @@
 
 INPUT_DIR = "data/input/"
 INTERMEDIATE_DIR = "data/intermediate/"
+OUTPUT_DIR = "data/output/"
 
 UCDB_FILE_PATH = INPUT_DIR + "GHS_STAT_UCDB2015MT_GLOBE_R2019A_V1_2.gpkg"
 CA_TRACT_FILE_PATH = INPUT_DIR + "tl_2022_06_tract/tl_2022_06_tract.shp"
@@ -23,3 +24,9 @@ SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH = INTERMEDIATE_DIR + "OD3am.pickle"
 
 SAMPLED_OD_ROUTES_API_FILE_PATH = INTERMEDIATE_DIR + "OD3am_routes_api.csv"
 NETWORK_ROUTING_RESULT_FILE_PATH = INTERMEDIATE_DIR + "OD3am_routes_api_network_routing.csv"
+
+PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "prediction_result.csv"
+RF_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_evaluation_result.csv"
+NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "naive_evaluation_result.csv"
+CROSS_VALIDATION_RESULT_FILE_PATH = OUTPUT_DIR + "cross_validation_result.txt"
+BEST_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_random_param.csv"
