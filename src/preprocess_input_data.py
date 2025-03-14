@@ -2,7 +2,6 @@
 
 import pickle
 from pathlib import Path
-from typing import Optional
 
 import geopandas as gpd
 import osmnx as ox
@@ -136,7 +135,7 @@ def get_annotated_graph(
 
 def sample_od_pairs(
     gdf_proj_tract_uber: gpd.GeoDataFrame,
-    sample_size: Optional[int],
+    sample_size: int | None,
     sample_hour: int,
 ) -> gpd.GeoDataFrame:
     """Sample OD pairs intersected with uber movement data from the given GeoDataFrame.
