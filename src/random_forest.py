@@ -40,7 +40,7 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
 
     """
     # split 80% train and 20% test set
-    train1, test1 = train_test_split(df, test_size=0.2, random_state=123)
+    train, test = train_test_split(df, test_size=0.2, random_state=123)
     list_of_features = [
         "signal_count",
         "stop_count",
@@ -54,15 +54,15 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
         "u_count",
         "travel_time",
     ]
-    y = train1["duration"]
-    x = train1[list_of_features]
-    x_test = test1[list_of_features]
+    y = train["duration"]
+    x = train[list_of_features]
+    x_test = test[list_of_features]
     # Fitting the default Random forest Regression to the dataset
     rf = RandomForestRegressor(random_state=123)
     # Fit the regressor with x and y data
     rf.fit(x, y)
     # Predict the result
-    test1["rf_predict_default"] = rf.predict(x_test)
+    test["rf_predict_default"] = rf.predict(x_test)
     base_cross_val_score = cross_val_score(
         rf,
         df[list_of_features],
@@ -109,7 +109,7 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
     best_random = RandomForestRegressor(**best_random_param)
     best_random.fit(x, y)
     # Predict the result
-    test1["rf_predict_random_tuned"] = best_random.predict(x_test)
+    test["rf_predict_random_tuned"] = best_random.predict(x_test)
     tuned_cross_val_score = cross_val_score(
         best_random,
         df[list_of_features],
@@ -117,14 +117,14 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
         cv=5,
         scoring="neg_mean_absolute_error",
     )
-    test1.to_csv(constants.PREDICTION_RESULT_FILE_PATH)
+    test.to_csv(constants.PREDICTION_RESULT_FILE_PATH)
 
     # Write the results to a text file
-    with Path.open()(constants.NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH, "w") as file:
+    with Path.open(constants.NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH, "w") as file:
         file.write(f"Base Cross-Validation Score: {base_cross_val_score}\n")
         file.write(f"Tuned Cross-Validation Score: {tuned_cross_val_score}\n")
 
-    return test1, pd.DataFrame([best_random_param]), base_cross_val_score, tuned_cross_val_score
+    return test, pd.DataFrame([best_random_param]), base_cross_val_score, tuned_cross_val_score
 
 
 def model_evaluation(y: pd.Series, predictions: pd.Series) -> pd.DataFrame:
@@ -162,6 +162,6 @@ if __name__ == "__main__":
     result = read_result()
     test1, best_params_df, base_cross_val_score, tuned_cross_val_score = rf_model(result)
     rf_eval = model_evaluation(test1["duration"], test1["rf_predict_random_tuned"])
-    rf_eval.to_csv(constants.PREDICTION_RESULT_FILE_PATH)
+    rf_eval.to_csv(constants.RF_EVALUATION_RESULT_FILE_PATH)
     naive_eval = model_evaluation(test1["duration"], test1["travel_time"])
     naive_eval.to_csv(constants.NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH)
