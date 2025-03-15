@@ -1,9 +1,5 @@
 # Data
 
-Keep all data outside this repo (such as a shared Google Drive) and provide direct links (accessible *only* to people explicitly granted access) in this readme file.
-
-Add any instructions/notes regarding the data to this readme file.
-
 The data can be accessd here (limited permission):
 [here](https://drive.google.com/drive/folders/1G444vNZN7TvW5C5Dw9VC_KBqy-iBaXQX?usp=sharing)
 

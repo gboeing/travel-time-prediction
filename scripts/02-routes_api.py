@@ -2,18 +2,18 @@
 
 import concurrent.futures
 import json
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
 
+import constants
 import geopandas as gpd
 import pandas as pd
 import polyline
 import pytz
 import requests
 from shapely.geometry import Point
-
-import constants
 
 _CACHE_FOLDER = "data/route_cache"
 Path.makedirs(_CACHE_FOLDER, exist_ok=True)
@@ -111,7 +111,8 @@ def create_departure_time(departure_time: tuple[int] | None = None) -> str:
             departure_time_str = departure_time_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
         except ValueError as e:
             # Handle exceptions (like invalid departure_time format)
-            print(f"Error: {e}")
+            error_message = f"Error converting departure time: {e}"
+            logging.exception(error_message)
             return None
 
     return departure_time_str
@@ -379,7 +380,8 @@ def fetch_all_routes(
                 save_to_cache(data, origin, destination, dep_time)
                 results_with_keys.append((index, data))
             except requests.exceptions.RequestException as exc:
-                print(f"Exception for request from {origin} to {destination} at {dep_time}: {exc}")
+                error_message = f"Request failed for {origin} to {destination} at {dep_time}: {exc}"
+                logging.exception(error_message)
 
     # Sort the results based on the index key
     return [data for _, data in sorted(results_with_keys, key=lambda x: x[0])]

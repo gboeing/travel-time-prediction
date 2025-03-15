@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import constants
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -12,8 +13,6 @@ from sklearn.model_selection import (
     cross_val_score,
     train_test_split,
 )
-
-import constants
 
 
 def read_result() -> pd.DataFrame:

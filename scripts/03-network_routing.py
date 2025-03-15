@@ -1,16 +1,14 @@
 """Calculating the travel time and distance of OD in a graph based on routing algorithms."""
 
 import multiprocessing as mp
-import time
 import warnings
 from heapq import heappop, heappush
 from itertools import count
 
+import constants
 import networkx as nx
 import osmnx as ox
 import pandas as pd
-
-import constants
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -372,7 +370,6 @@ def shortest_path_turn_penalty(
                     paths[u] = paths[v] + [u]
     # The optional predecessor and path dictionaries can be accessed
     # by the caller via the pred and paths objects passed as arguments.
-    print("Reached target: ", reached_target)
     return paths[reached_target]
 
 
@@ -641,14 +638,12 @@ def run() -> None:
         for i in range(len(od_pair_sample))
     )
 
-    cur = time.time()
     pool = mp.Pool(cpus)
     res = pool.starmap_async(calculate, args)
     all_results = res.get()
 
     pool.close()
     pool.join()
-    print(time.time() - cur)
 
     all_results_df = pd.DataFrame(
         all_results,

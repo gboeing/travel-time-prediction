@@ -3,11 +3,10 @@
 import pickle
 from pathlib import Path
 
+import constants
 import geopandas as gpd
 import osmnx as ox
 import pandas as pd
-
-import constants
 
 
 def get_gdf_inputs() -> tuple[
