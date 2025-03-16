@@ -14,5 +14,5 @@ dependencies:
   - requests
   - scipy
   - shapely
-  - sklearn
+  - scikit-learn
   - statsmodels
