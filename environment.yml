@@ -2,8 +2,17 @@ name: ttp
 channels:
   - conda-forge
 dependencies:
+  - geopandas
   - jupyterlab
+  - networkx
+  - numpy
   - osmnx
+  - pandas
   - pre-commit
   - polyline
+  - pytz
+  - requests
+  - scipy
+  - shapely
+  - sklearn
   - statsmodels
