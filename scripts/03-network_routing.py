@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Calculating the travel time and distance of OD in a graph based on routing algorithms."""
 
 import multiprocessing as mp
@@ -24,7 +26,7 @@ _U_TURN_DEGREE_LOWER_BOUND = 135
 _U_TURN_DEGREE_UPPER_BOUND = 225
 
 
-def add_edge_control_non_simplified(
+def add_edge_control_non_simplified(  # noqa: C901, PLR0912, PLR0913, PLR0915
     graph: nx.MultiGraph,
     traffic_signals_time: float = 2,
     stop_time: float = 2,
@@ -168,7 +170,7 @@ def add_edge_control_non_simplified(
     return graph
 
 
-def get_slight_turn_penalty_dict(
+def get_slight_turn_penalty_dict(  # noqa: C901, PLR0913
     graph: nx.MultiGraph,
     left_turn_penalty: float = 30,
     slight_left_turn_penalty: float = 20,
@@ -263,7 +265,7 @@ def get_slight_turn_penalty_dict(
 
 # Source: https://github.com/maxtmng/shortest_path_turn_penalty/
 ## used the function without any modification
-def shortest_path_turn_penalty(
+def shortest_path_turn_penalty(  # noqa: C901, PLR0912, PLR0913, PLR0915
     graph: nx.MultiGraph,
     source: int,
     target: int,
@@ -317,7 +319,7 @@ def shortest_path_turn_penalty(
         penalty = {}
 
     succ_graph = graph.adj  # For speed-up (and works for both directed and undirected graphs)
-    weight = nx.algorithms.shortest_paths.weighted._weight_function(graph, weight)
+    weight = nx.algorithms.shortest_paths.weighted._weight_function(graph, weight)  # noqa: SLF001
     push = heappush
     pop = heappop
     dist = {}  # dictionary of final distances
@@ -373,7 +375,7 @@ def shortest_path_turn_penalty(
     return paths[reached_target]
 
 
-def calculate(
+def calculate(  # noqa: C901, PLR0913
     graph: nx.MultiGraph,
     source: int,
     target: int,

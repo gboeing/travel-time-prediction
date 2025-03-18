@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Constants used in this project."""
 
 INPUT_DIR = "data/input/"

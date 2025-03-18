@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Preprocess the input data."""
 
 import pickle
@@ -88,7 +90,7 @@ def get_annotated_graph(
     """
     if Path(constants.CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH).is_file():
         with Path.open(constants.CONVEX_STRONGLY_ATTRIBUTES_PICKLE_PATH, "rb") as file:
-            return pickle.load(file)
+            return pickle.load(file)  # noqa: S301
 
     ox.settings.useful_tags_node = [
         "ref",
@@ -155,7 +157,7 @@ def sample_od_pairs(
     """
     if Path(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH).is_file():
         with Path.open(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH, "rb") as file:
-            return pickle.load(file)
+            return pickle.load(file)  # noqa: S301
 
     # Oversample to be filtered later
     origin = (

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Call Google API with AIP key to get route information between two locations."""
 
 import concurrent.futures

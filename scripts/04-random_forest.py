@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Building random forest model to predict Google travel time."""
 
 from pathlib import Path
