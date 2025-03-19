@@ -1,3 +1,6 @@
+cache
+route_cache
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -160,11 +163,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-
-Code_Jessica/cache
-Code_Wendy/cache
-
-data/config.json
-
-/Data/Output
-route_cache
+# Data file
+data/intermediate
+data/input
+/data/output
