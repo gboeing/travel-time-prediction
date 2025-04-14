@@ -49,11 +49,18 @@ repos:
           - --no-cache
           - --line-length=100
 
-  - repo: local
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
     hooks:
-      - id: nbconvert
-        name: clear notebook output
-        entry: jupyter nbconvert
-        language: system
-        types: [jupyter]
-        args: [--clear-output, --inplace]
+      - id: nbstripout
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+
+  - repo: https://github.com/meliache/pre-commit-chktex
+    rev: v0.2.2
+    hooks:
+      - id: chktex-conda
+        args: [-H, -I, -n9, -n10, -n12, -n13, -n17]
