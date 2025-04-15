@@ -14,6 +14,7 @@ from sklearn.model_selection import (
     RandomizedSearchCV,
     cross_val_score,
     train_test_split,
+    KFold
 )
 
 
@@ -64,11 +65,12 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
     rf.fit(x, y)
     # Predict the result
     test["rf_predict_default"] = rf.predict(x_test)
+    kf = KFold(n_splits=5, shuffle=True, random_state=123)
     base_cross_val_score = cross_val_score(
         rf,
         df[list_of_features],
         df["duration"],
-        cv=5,
+        cv=kf,
         scoring="neg_mean_absolute_error",
     )
 
@@ -115,13 +117,13 @@ def rf_model(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, 
         best_random,
         df[list_of_features],
         df["duration"],
-        cv=5,
+        cv=kf,
         scoring="neg_mean_absolute_error",
     )
     test.to_csv(constants.PREDICTION_RESULT_FILE_PATH)
 
     # Write the results to a text file
-    with Path.open(constants.NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH, "w") as file:
+    with Path.open(constants.CROSS_VALIDATION_RESULT_FILE_PATH, "w") as file:
         file.write(f"Base Cross-Validation Score: {base_cross_val_score}\n")
         file.write(f"Tuned Cross-Validation Score: {tuned_cross_val_score}\n")
 
