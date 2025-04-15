@@ -10,12 +10,7 @@ import pandas as pd
 from scipy import stats
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
-from sklearn.model_selection import (
-    RandomizedSearchCV,
-    cross_val_score,
-    train_test_split,
-    KFold
-)
+from sklearn.model_selection import KFold, RandomizedSearchCV, cross_val_score, train_test_split
 
 
 def read_result() -> pd.DataFrame:
