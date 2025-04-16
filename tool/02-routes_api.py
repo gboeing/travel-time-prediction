@@ -19,6 +19,7 @@ from shapely.geometry import Point
 
 _CACHE_FOLDER = "data/route_cache"
 Path.makedirs(_CACHE_FOLDER, exist_ok=True)
+logger = logging.getLogger(__name__)
 
 
 class Location:
@@ -114,7 +115,7 @@ def create_departure_time(departure_time: tuple[int] | None = None) -> str:
         except ValueError as e:
             # Handle exceptions (like invalid departure_time format)
             error_message = f"Error converting departure time: {e}"
-            logging.exception(error_message)
+            logger.exception(error_message)
             return None
 
     return departure_time_str
@@ -383,7 +384,7 @@ def fetch_all_routes(
                 results_with_keys.append((index, data))
             except requests.exceptions.RequestException as exc:
                 error_message = f"Request failed for {origin} to {destination} at {dep_time}: {exc}"
-                logging.exception(error_message)
+                logger.exception(error_message)
 
     # Sort the results based on the index key
     return [data for _, data in sorted(results_with_keys, key=lambda x: x[0])]

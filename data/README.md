@@ -1,6 +1,6 @@
 # Data
 
-The data can be accessd here (limited permission):
+The data can be accessed here (limited permission):
 [here](https://drive.google.com/drive/folders/1G444vNZN7TvW5C5Dw9VC_KBqy-iBaXQX?usp=sharing)
 
 It is organized according to the structure listed in the constants.py file.
