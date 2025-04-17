@@ -1,6 +1,6 @@
-# Code files
+# Prediction Model
 
-The code order is as follows:
+Run the model by executing the code in order:
 
 1. run the `01-preprocess.py` file to preprocess the data and sample OD pairs.
 2. run the `02-routes_api.py` file to query the 3am Google travel time of sampled OD pairs using Google Routes API.
