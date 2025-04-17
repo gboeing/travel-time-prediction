@@ -3,16 +3,16 @@ channels:
   - conda-forge
 dependencies:
   - geopandas=1.0
-  - jupyterlab=4.4
+  - jupyterlab
   - networkx=3.4
   - numpy=2.2
   - osmnx=2.0
   - pandas=2.2
-  - pre-commit=4.2
   - polyline=2.0
+  - pre-commit
   - pytz=2025.2
   - requests=2.32
+  - scikit-learn=1.6
   - scipy=1.15
   - shapely=2.1
-  - scikit-learn=1.6
   - statsmodels=0.14
