@@ -35,7 +35,7 @@ repos:
             truthy: {check-keys: false}}}
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.5
+    rev: v0.11.7
     hooks:
       - id: ruff
         args:
@@ -63,4 +63,4 @@ repos:
     rev: v0.2.2
     hooks:
       - id: chktex-conda
-        args: [-H, -I, -n9, -n10, -n12, -n13, -n17]
+        args: [-n3, -n12, -n22, -n30, -n46]
