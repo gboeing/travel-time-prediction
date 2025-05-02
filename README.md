@@ -1,4 +1,4 @@
-# Travel Time Prediction
+# Minimally-congested travel time prediction from sparse open data
 
 ## Guidelines
 
