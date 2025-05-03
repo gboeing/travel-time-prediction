@@ -72,7 +72,7 @@ def get_annotated_graph(
     ca_tract_gdf: gpd.GeoDataFrame,
     uber_tract_gdf: gpd.GeoDataFrame,
 ) -> gpd.GeoDataFrame:
-    """Annotate information to all nodes in the given .
+    """Annotate information to all nodes in the given.
 
     Parameters
     ----------
@@ -103,13 +103,18 @@ def get_annotated_graph(
     ]
 
     convex_polygon = gpd.GeoDataFrame(geometry=polygon).iloc[0]["geometry"]
-    graph = ox.graph_from_polygon(convex_polygon, simplify=False, network_type="drive")
+    graph_sim = ox.graph_from_polygon(convex_polygon, simplify=True, network_type="drive")
+    graph_nonsim = ox.graph_from_polygon(convex_polygon, simplify=False, network_type="drive")
 
     # Get strongly connected graph
-    connected_graph = ox.truncate.largest_component(graph, strongly=True)
-    ox.save_graphml(connected_graph, filepath=constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH)
+    connected_graph_sim = ox.truncate.largest_component(graph_sim, strongly=True)
+    connected_graph_nonsim = ox.truncate.largest_component(graph_nonsim, strongly=True)
+    ox.save_graphml(
+        connected_graph_nonsim,
+        filepath=constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH,
+    )
 
-    gdf_nodes, gdf_edges = ox.graph_to_gdfs(connected_graph)
+    gdf_nodes, gdf_edges = ox.graph_to_gdfs(connected_graph_sim)
     gdf = gdf_nodes.reset_index(drop=False)
     gdf_proj = ox.projection.project_gdf(gdf, to_latlong=True)
     gdf_proj["x"] = gdf_proj["geometry"].x
