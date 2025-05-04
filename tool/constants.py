@@ -12,7 +12,9 @@ UBER_TRACT_FILE_PATH = INPUT_DIR + "los_angeles_censustracts.json"
 UBER_TRAVEL_TIME_FILE_PATH = INPUT_DIR + "los_angeles-censustracts-2020-1-All-HourlyAggregate.csv"
 
 LA_CLIP_CONVEX_FILE_PATH = INTERMEDIATE_DIR + "la_clip_convex.shp"
-LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH = INTERMEDIATE_DIR + "la_clip_convex_strong_network.graphml"
+LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH = (
+    INTERMEDIATE_DIR + "LA_clip_convex_strong_network_non_simplify_all_direction.graphml"
+)
 CONVEX_STRONGLY_ATTRIBUTES_FILE_PATH = (
     INTERMEDIATE_DIR + "nodes_candidate_convex_strongly_attributes.csv"
 )
@@ -25,13 +27,14 @@ SAMPLED_OD_SAMPLE_HOUR_FILE_PATH = INTERMEDIATE_DIR + "OD3am.csv"
 SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH = INTERMEDIATE_DIR + "OD3am.pickle"
 
 SAMPLED_OD_ROUTES_API_FILE_PATH = INTERMEDIATE_DIR + "OD3am_routes_api.csv"
-NETWORK_ROUTING_RESULT_FILE_PATH = INTERMEDIATE_DIR + "OD3am_routes_api_network_routing.csv"
+NETWORK_ROUTING_RESULT_FILE_PATH = (
+    INTERMEDIATE_DIR + "OD3am_routes_api_network_routing_multiple_all.csv"
+)
 
 RF_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_prediction_result.csv"
 GB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_prediction_result.csv"
 AB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "ab_prediction_result.csv"
 DT_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "dt_prediction_result.csv"
-
 
 RF_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_evaluation_result.csv"
 GB_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_evaluation_result.csv"

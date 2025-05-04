@@ -11,6 +11,7 @@ import constants
 import networkx as nx
 import osmnx as ox
 import pandas as pd
+from networkx.exception import NetworkXNoPath, NodeNotFound
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -26,32 +27,64 @@ _U_TURN_DEGREE_LOWER_BOUND = 135
 _U_TURN_DEGREE_UPPER_BOUND = 225
 
 
-def add_edge_control_non_simplified(  # noqa: C901, PLR0912, PLR0913, PLR0915
+def control_applies(graph: nx.MultiGraph, u: int, v: int, key: int, tag_name: str) -> bool:
+    """Judge whether the traffic control applies based on the direction.
+
+    Return True if the control tag `tag_name` at node v should apply
+    on the edge (u, v, key), considering any tag-specific or general direction.
+
+    Parameters
+    ----------
+    graph : nx.MultiDiGraph
+      The OSMnx graph containing node and edge attributes.
+    u : int
+      Source node ID of the edge.
+    v : int
+      Targfet node ID of the edge (where the traffic controls are).
+    key : int
+      Edge key for parallel edges
+    tag_name : str
+      Name of the control tag with directions, e.g. "traffic_signals", "stop", "give_way".
+
+    Returns
+    -------
+    bool
+      True if the control tag `tag_name` should apply on the edge (u, v, key).
+      False if the control tag `tag_name` 's direction should not apply on the edge (u, v, key).
+
+    """
+    field = f"{tag_name}:direction"
+    dir_val = graph.nodes[v][field] if field in graph.nodes[v] else graph.nodes[v].get("direction")
+    if dir_val not in ("forward", "backward"):
+        return True
+    rev = graph[u][v][key]["reversed"]
+    if dir_val == "forward" and rev:
+        return False
+    return not (dir_val == "backward" and not rev)
+
+
+def add_edge_control_non_simplified(  # noqa: PLR0913
     graph: nx.MultiGraph,
     traffic_signals_time: float = 2,
     stop_time: float = 2,
-    turning_circle_time: float = 0,
     crossing_time: float = 1.5,
     give_way_time: float = 1.5,
     mini_roundabout_time: float = 1.5,
 ) -> nx.MultiGraph:
     """Calculate traffic time penalties for different features of edge attributes in a graph.
 
-    This function assigns traffic time penalties to edges.
-    It considers various highway types, such as traffic signals, stop signs, turning circles,
-    crossings, give-way signs, and mini roundabouts, and assigns corresponding time penalties to
-    these features.
+    It assigns traffic controls to edges, considering nodes with multiple highway tags.
+    It considers traffic signals, stop signs, crossings, give-way signs, and mini roundabouts,
+    and assigns corresponding time penalties specified to these features.
 
     Parameters
     ----------
-    graph : networkx.MultiGraph
+    graph : networkx.MultiDiGraph
       An undirected, unprojected graph with 'bearing' attributes on each edge.
     traffic_signals_time : float, optional
       The time penalty for passing through a traffic signal-controlled intersection (default: 2).
     stop_time : float, optional
       The time penalty for stopping at a stop sign or stop-controlled intersection (default: 2).
-    turning_circle_time : float, optional
-      The time penalty for navigating a turning circle or roundabout (default: 0).
     crossing_time : float, optional
       The time penalty for crossing a pedestrian crossing (default: 1.5).
     give_way_time : float, optional
@@ -66,112 +99,50 @@ def add_edge_control_non_simplified(  # noqa: C901, PLR0912, PLR0913, PLR0915
       the calculated traffic-related time penalties.
 
     """
-    for u, v, key, data in graph.edges(data=True, keys=True):
-        # check if 'highway' tag is in destination node
-        if v in graph.nodes and "highway" in graph.nodes[v]:
-            highway_value = graph.nodes[v]["highway"]
-            # map the time values of traffic penalties
-            if highway_value == "traffic_signals":
-                if "traffic_signals:direction" in graph.nodes[v]:
-                    if (
-                        graph.nodes[v]["traffic_signals:direction"] == "forward"
-                        and graph[u][v][key]["reversed"]
-                    ) or (
-                        graph.nodes[v]["traffic_signals:direction"] == "backward"
-                        and not graph[u][v][key]["reversed"]
-                    ):
-                        traffic_time = 0
-                        traffic_control = ""
-                    else:
-                        traffic_time = traffic_signals_time
-                        traffic_control = "traffic_signals"
-                elif "direction" in graph.nodes[v]:
-                    if (
-                        graph.nodes[v]["direction"] == "forward" and graph[u][v][key]["reversed"]
-                    ) or (
-                        graph.nodes[v]["direction"] == "backward"
-                        and not graph[u][v][key]["reversed"]
-                    ):
-                        traffic_time = 0
-                        traffic_control = ""
-                    else:
-                        traffic_time = traffic_signals_time
-                        traffic_control = "traffic_signals"
-                else:
-                    traffic_time = traffic_signals_time
-                    traffic_control = "traffic_signals"
-            elif highway_value == "stop":
-                if "stop:direction" in graph.nodes[v]:
-                    if (
-                        graph.nodes[v]["stop:direction"] == "forward"
-                        and graph[u][v][key]["reversed"]
-                    ) or (
-                        graph.nodes[v]["stop:direction"] == "backward"
-                        and not graph[u][v][key]["reversed"]
-                    ):
-                        traffic_time = 0
-                        traffic_control = ""
-                    else:
-                        traffic_time = stop_time
-                        traffic_control = "stop"
-                elif "direction" in graph.nodes[v]:
-                    if (
-                        graph.nodes[v]["direction"] == "forward" and graph[u][v][key]["reversed"]
-                    ) or (
-                        graph.nodes[v]["direction"] == "backward"
-                        and not graph[u][v][key]["reversed"]
-                    ):
-                        traffic_time = 0
-                        traffic_control = ""
-                    else:
-                        traffic_time = stop_time
-                        traffic_control = "stop"
-                else:
-                    traffic_time = stop_time
-                    traffic_control = "stop"
-            elif highway_value == "turning_circle":
-                traffic_time = turning_circle_time
-                traffic_control = "turning_circle"
-            elif highway_value == "crossing":
-                traffic_time = crossing_time
-                traffic_control = "crossing"
-            elif highway_value == "give_way":
-                if "direction" in graph.nodes[v]:
-                    if (
-                        graph.nodes[v]["direction"] == "forward" and graph[u][v][key]["reversed"]
-                    ) or (
-                        graph.nodes[v]["direction"] == "backward"
-                        and not graph[u][v][key]["reversed"]
-                    ):
-                        traffic_time = 0
-                        traffic_control = ""
-                    else:
-                        traffic_time = give_way_time
-                        traffic_control = "give_way"
-                else:
-                    traffic_time = give_way_time
-                    traffic_control = "give_way"
+    for u, v, key, _data in graph.edges(data=True, keys=True):
+        traffic_time = 0
+        controls = []
 
-            elif highway_value == "mini_roundabout":
-                traffic_time = mini_roundabout_time
-                traffic_control = "mini_roundabout"
+        if "highway" in graph.nodes[v]:
+            # check if 'highway' tag is in destination node
+            raw_value = graph.nodes[v]["highway"]
+            if isinstance(raw_value, str):
+                tags = [t.strip() for t in raw_value.split(";")]
+                # if there are multiple tags in the node, split them into a list
+                # or if there is only one tag in the node, also put it as a list
+            elif isinstance(raw_value, list):
+                # if it is already a list, then pass it along
+                tags = raw_value
             else:
-                traffic_time = 0
-                traffic_control = ""
-        else:
-            traffic_time = 0
-            traffic_control = ""
+                tags = []
+                # if not, it means that it has no tag, then pass it with an empty list
+            # add traffic controls and assigned penalties on edges
+            if "traffic_signals" in tags and control_applies(graph, u, v, key, "traffic_signals"):
+                traffic_time += traffic_signals_time
+                controls.append("traffic_signals")
+            if "stop" in tags and control_applies(graph, u, v, key, "stop"):
+                traffic_time += stop_time
+                controls.append("stop")
+            if "crossing" in tags:
+                traffic_time += crossing_time
+                controls.append("crossing")
+            if "give_way" in tags and control_applies(graph, u, v, key, "give_way"):
+                traffic_time += give_way_time
+                controls.append("give_way")
+            if "mini_roundabout" in tags:
+                traffic_time += mini_roundabout_time
+                controls.append("mini_roundabout")
 
         graph[u][v][key]["traffic_time"] = traffic_time
-        graph[u][v][key]["traffic_control"] = traffic_control
+        graph[u][v][key]["traffic_control"] = ";".join(controls)
         # calculate 'total_time' by adding 'travel_time' and 'traffic_time'
         # add 'total_time' attribute to the edge
-        graph[u][v][key]["total_time"] = data.get("travel_time") + traffic_time
+        graph[u][v][key]["total_time"] = graph[u][v][key]["travel_time"] + traffic_time
     return graph
 
 
 def get_slight_turn_penalty_dict(  # noqa: C901, PLR0913
-    graph: nx.MultiGraph,
+    graph: nx.MultiDiGraph,
     left_turn_penalty: float = 30,
     slight_left_turn_penalty: float = 20,
     right_turn_penalty: float = 10,
@@ -186,18 +157,18 @@ def get_slight_turn_penalty_dict(  # noqa: C901, PLR0913
 
     Parameters
     ----------
-    graph : networkx.MultiGraph
+    graph : networkx.MultiDiGraph
       A directed graph representing a road network with 'bearing' attributes on each edge.
     left_turn_penalty : float, optional
-      The penalty for making a left turn at an intersection (default: 30).
+      The penalty (seconds) for making a left turn at an intersection (default: 30).
     slight_left_turn_penalty : float, optional
-      The penalty for making a slight left turn at an intersection (default: 20).
+      The penalty (seconds) for making a slight left turn at an intersection (default: 20).
     right_turn_penalty : float, optional
-      The penalty for making a right turn at an intersection (default: 10).
+      The penalty (seconds) for making a right turn at an intersection (default: 10).
     slight_right_turn_penalty : float, optional
-      The penalty for making a slight right turn at an intersection (default: 20).
+      The penalty (seconds) for making a slight right turn at an intersection (default: 20).
     u_turn_penalty : float, optional
-      The penalty for making a U-turn at an intersection (default: 90).
+      The penalty (seconds) for making a U-turn at an intersection (default: 90).
 
     Returns
     -------
@@ -264,9 +235,8 @@ def get_slight_turn_penalty_dict(  # noqa: C901, PLR0913
 
 
 # Source: https://github.com/maxtmng/shortest_path_turn_penalty/
-## used the function without any modification
 def shortest_path_turn_penalty(  # noqa: C901, PLR0912, PLR0913, PLR0915
-    graph: nx.MultiGraph,
+    graph: nx.MultiDiGraph,
     source: int,
     target: int,
     weight: str,
@@ -283,7 +253,7 @@ def shortest_path_turn_penalty(  # noqa: C901, PLR0912, PLR0913, PLR0915
 
     Parameters
     ----------
-    graph : NetworkX graph
+    graph : networkx.MultiDiGraph
         The graph of the street network.
     source : non-empty iterable of nodes
         Starting nodes for paths. If this is just an iterable containing
@@ -370,12 +340,16 @@ def shortest_path_turn_penalty(  # noqa: C901, PLR0912, PLR0913, PLR0915
                 push(fringe, (vu_dist, next(c), u, m))
                 if paths is not None:
                     paths[u] = paths[v] + [u]
+    if reached_target is None:
+        # no directed path reached the target
+        raise nx.NetworkXNoPath(source, target)
+
+    return paths[reached_target]
     # The optional predecessor and path dictionaries can be accessed
     # by the caller via the pred and paths objects passed as arguments.
-    return paths[reached_target]
 
 
-def calculate(  # noqa: C901, PLR0913
+def calculate(  # noqa: C901, PLR0913, PLR0912
     graph: nx.MultiGraph,
     source: int,
     target: int,
@@ -422,16 +396,16 @@ def calculate(  # noqa: C901, PLR0913
       Algorithm for routing: 'penalized' (with traffic controls and turn penalties), 'freeflow'
       (shortest time routing without considering any traffic controls and turn penalties),
       'shortest_distance' (shortest distance routing)
-    left_turn_penalty : float (default: 30s)
-      Penalty in seconds for left turns (225-315 degrees), set to 30
-    slight_left_turn_penalty : float (default: 10s)
-      Penalty in seconds for slight left turns (315 - 330 degrees), set to 10
-    right_turn_penalty : float (default: 15s)
-      Penalty in seconds for right turns (45-135 degrees), set to 15
-    slight_right_turn_penalty : float (default: 5s)
-      Penalty in seconds for slight right turns (30-45 degrees), set to 5
-    u_turn_penalty : float (default: 50s)
-      Penalty in seconds for u turns (135-225 degrees), set for 50s
+    left_turn_penalty : float (default: 0s)
+      Penalty in seconds for left turns (225-315 degrees), set to 0
+    slight_left_turn_penalty : float (default: 0s)
+      Penalty in seconds for slight left turns (315 - 330 degrees), set to 0
+    right_turn_penalty : float (default: 0s)
+      Penalty in seconds for right turns (45-135 degrees), set to 0
+    slight_right_turn_penalty : float (default: 0s)
+      Penalty in seconds for slight right turns (30-45 degrees), set to 0
+    u_turn_penalty : float (default: 0s)
+      Penalty in seconds for u turns (135-225 degrees), set for 0s
 
     Returns
     -------
@@ -444,6 +418,37 @@ def calculate(  # noqa: C901, PLR0913
       u turns.
 
     """
+    # immediate return if either source or target code is missing
+    if not graph.has_node(source) or not graph.has_node(target):
+        return (
+            source,
+            target,
+            sy,
+            sx,
+            ty,
+            tx,
+            hod,
+            uber_time,
+            -1,
+            -1,
+            -1,
+            -1,
+            [],
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+        )
+    if algorithm not in {"penalized", "freeflow", "shortest_distance"}:
+        msg = f"Unknown algorithm: {algorithm}"
+        raise ValueError(msg)
+
     try:
         if algorithm == "penalized":
             route = shortest_path_turn_penalty(
@@ -461,17 +466,16 @@ def calculate(  # noqa: C901, PLR0913
                 weight="travel_time",
                 penalty=None,
             )
-        elif algorithm == "shortest_distance":
+        else:
+            # otherwise, just use shortest path
             route = shortest_path_turn_penalty(graph, source, target, weight="length", penalty=None)
 
         route_edges = ox.routing.route_to_gdf(graph, route)
-        signal_count = len(route_edges[route_edges["traffic_control"] == "traffic_signals"])
-        stop_count = len(route_edges[route_edges["traffic_control"] == "stop"])
-        crossing_count = len(route_edges[route_edges["traffic_control"] == "crossing"])
-        give_way_count = len(route_edges[route_edges["traffic_control"] == "give_way"])
-        mini_roundabout_count = len(
-            route_edges[route_edges["traffic_control"] == "mini_roundabout"],
-        )
+        signal_count = route_edges["traffic_control"].str.contains("traffic_signals").sum()
+        stop_count = route_edges["traffic_control"].str.contains("stop").sum()
+        crossing_count = route_edges["traffic_control"].str.contains("crossing").sum()
+        give_way_count = route_edges["traffic_control"].str.contains("give_way").sum()
+        mini_roundabout_count = route_edges["traffic_control"].str.contains("mini_roundabout").sum()
 
         route_index = route_edges.reset_index()
         route_index["turn_degree"] = 0
@@ -501,9 +505,9 @@ def calculate(  # noqa: C901, PLR0913
             ):
                 route_index.loc[b, "turn_type"] = "right_turn"
             if (
-                _RIGHT_TURN_DEGREE_LOWER_BOUND
+                _SLIGHT_RIGHT_TURN_DEGREE_LOWER_BOUND
                 < route_index.loc[b, "turn_degree"]
-                <= _RIGHT_TURN_DEGREE_UPPER_BOUND
+                <= _SLIGHT_RIGHT_TURN_DEGREE_UPPER_BOUND
             ):
                 route_index.loc[b, "turn_type"] = "slight_right_turn"
             if (
@@ -532,11 +536,11 @@ def calculate(  # noqa: C901, PLR0913
         )
         distance = sum(ox.routing.route_to_gdf(graph, route, weight="length")["length"])
 
-    except ValueError:
+    except (ValueError, NodeNotFound, NetworkXNoPath, KeyError):
         # If the path is unsolvable, return -1, -1
+        route = []
         travel_time, total_time, total_time_with_turn_penalty, distance = -1, -1, -1, -1
         (
-            route,
             signal_count,
             stop_count,
             crossing_count,
@@ -547,7 +551,7 @@ def calculate(  # noqa: C901, PLR0913
             right_count,
             slight_right_count,
             u_count,
-        ) = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+        ) = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
     return (
         source,
         target,
@@ -585,13 +589,12 @@ def run() -> None:
     """
     # number of cpus used for running
 
-    cpus = mp.cpu_count() - 2
+    cpus = mp.cpu_count() - 6
 
     # set up the traffic control penalties (in seconds)
     traffic_time_config = {
         "traffic_signals_time": 0,
         "stop_time": 0,
-        "turning_circle_time": 0,
         "crossing_time": 0,
         "give_way_time": 0,
         "mini_roundabout_time": 0,
@@ -601,6 +604,12 @@ def run() -> None:
 
     graph = ox.io.load_graphml(constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH)
 
+    valid_nodes = set(graph.nodes)
+
+    # Keep only rows where both oid and did are in valid_nodes
+    od_pair_sample = od_pair_sample[
+        od_pair_sample["oid"].isin(valid_nodes) & od_pair_sample["did"].isin(valid_nodes)
+    ]
     # set up turn penalty dictionary
 
     graph = ox.add_edge_speeds(graph)
