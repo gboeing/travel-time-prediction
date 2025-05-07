@@ -34,11 +34,10 @@ NETWORK_ROUTING_RESULT_FILE_PATH = (
 TRAFFIC_CONTROL_FILE_PATH = OUTPUT_DIR + "table1_traffic_controls.csv"
 COMBINED_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "table2_combined_evaluation_result.csv"
 
-
-RF_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_prediction_result.csv"
-GB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_prediction_result.csv"
-AB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "ab_prediction_result.csv"
-DT_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "dt_prediction_result.csv"
+BEST_RF_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_rf_random_param.csv"
+BEST_GB_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_gb_random_param.csv"
+BEST_AB_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_ab_random_param.csv"
+BEST_DT_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_dt_random_param.csv"
 
 RF_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_evaluation_result.csv"
 GB_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_evaluation_result.csv"
@@ -46,7 +45,3 @@ AB_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "ab_evaluation_result.csv"
 DT_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "dt_evaluation_result.csv"
 NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "naive_evaluation_result.csv"
 
-BEST_RF_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_rf_random_param.csv"
-BEST_GB_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_gb_random_param.csv"
-BEST_AB_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_ab_random_param.csv"
-BEST_DT_RANDOM_PARAM_FILE_PATH = OUTPUT_DIR + "best_dt_random_param.csv"
