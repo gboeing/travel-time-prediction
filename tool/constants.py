@@ -31,6 +31,8 @@ NETWORK_ROUTING_RESULT_FILE_PATH = (
     INTERMEDIATE_DIR + "OD3am_routes_api_network_routing_multiple_all.csv"
 )
 
+TRAFFIC_CONTROL_FILE_PATH = OUTPUT_DIR + "table1_traffic_controls.csv"
+
 RF_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_prediction_result.csv"
 GB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_prediction_result.csv"
 AB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "ab_prediction_result.csv"

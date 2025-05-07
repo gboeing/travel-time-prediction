@@ -4,6 +4,7 @@
 
 import multiprocessing as mp
 import warnings
+from collections import Counter
 from heapq import heappop, heappush
 from itertools import count
 
@@ -603,6 +604,42 @@ def run() -> None:
     od_pair_sample = pd.read_csv(constants.SAMPLED_OD_ROUTES_API_FILE_PATH)
 
     graph = ox.io.load_graphml(constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH)
+    resim_graph = ox.simplification.simplify_graph(graph)
+    simplify_nodes, simplify_edges = ox.graph_to_gdfs(resim_graph)
+    # statistics for table 1
+    tag_list = ["traffic_signals", "stop", "crossing", "give_way", "mini_roundabout"]
+    tag_counter = Counter()
+
+    for _, data in graph.nodes(data=True):
+        highway = data.get("highway")
+        tags = []
+        if isinstance(highway, str):
+            tags = [t.strip() for t in highway.split(";")]
+            # if there are multiple tags in the node, split them into a list
+            # or if there is only one tag in the node, also put it as a list
+        elif isinstance(highway, list):
+            # if it is already a list, then pass it along
+            tags = highway
+        for tag in tags:
+            if tag in tag_list:
+                tag_counter[tag] += 1
+    total_controls = sum(tag_counter.values())
+    total_nodes = len(graph.nodes)
+    total_intersections = len(simplify_nodes[simplify_nodes["street_count"] > 1])
+
+    # Create table data
+    tc_rows = [
+        {"Element": "Crossing", "Count": tag_counter.get("crossing", 0)},
+        {"Element": "Stop sign", "Count": tag_counter.get("stop", 0)},
+        {"Element": "Traffic signal", "Count": tag_counter.get("traffic_signals", 0)},
+        {"Element": "Mini roundabout", "Count": tag_counter.get("mini_roundabout", 0)},
+        {"Element": "Give way", "Count": tag_counter.get("give_way", 0)},
+        {"Element": "Total traffic control elements", "Count": total_controls},
+        {"Element": "Total street intersections", "Count": total_intersections},
+        {"Element": "Total nodes", "Count": total_nodes},
+    ]
+    tc_df = pd.DataFrame(tc_rows)
+    tc_df.to_csv(constants.TRAFFIC_CONTROL_FILE_PATH, index=False)
 
     valid_nodes = set(graph.nodes)
 
