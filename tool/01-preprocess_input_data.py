@@ -21,7 +21,7 @@ def get_gdf_inputs() -> tuple[
 
     Returns
     -------
-        Tuple of GeoDataFrames with same CRS.
+        Tuple of GeoDataFrames with the same CRS.
 
     """
     ucdb_gdf = gpd.read_file(constants.UCDB_FILE_PATH)
@@ -221,15 +221,12 @@ def sample_od_pairs(
         .apply(lambda x: x.sample(1, random_state=123))
         .reset_index(drop=True)
     )
+    uber_dedup_merge_sample = uber_dedup_merge_sample[uber_dedup_merge_sample["hod"] == sample_hour]
 
-    sampled_hour_df = (
-        uber_dedup_merge_sample[uber_dedup_merge_sample["hod"] == sample_hour]
-        .sample(
-            n=len(uber_dedup_merge_sample) if sample_size is None else sample_size,
-            random_state=123,
-        )
-        .copy()
-    )
+    sampled_hour_df = uber_dedup_merge_sample.sample(
+        n=len(uber_dedup_merge_sample) if sample_size is None else sample_size,
+        random_state=123,
+    ).copy()
     sampled_hour_df.to_csv(constants.SAMPLED_OD_SAMPLE_HOUR_FILE_PATH)
     with Path.open(constants.SAMPLED_OD_SAMPLE_HOUR_PICKLE_PATH, "wb") as file:
         pickle.dump(sampled_hour_df, file)

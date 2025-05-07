@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-"""Call Google API with AIP key to get route information between two locations."""
+"""Call Google Routes API with an API key to get route information between two locations."""
 
 import concurrent.futures
 import json
 import logging
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -18,7 +19,7 @@ import requests
 from shapely.geometry import Point
 
 _CACHE_FOLDER = "data/route_cache"
-Path.makedirs(_CACHE_FOLDER, exist_ok=True)
+Path(_CACHE_FOLDER).mkdir(parents=True, exist_ok=True)
 logger = logging.getLogger(__name__)
 
 
@@ -81,7 +82,7 @@ def parse_dataframe_to_locations(dataframe: pd.DataFrame) -> list[Location]:
     return locations
 
 
-def create_departure_time(departure_time: tuple[int] | None = None) -> str:
+def create_departure_time(departure_time: tuple[int] | None = None) -> str | None:
     """Convert a departure time to a standardized UTC format string.
 
     Parameters
@@ -179,7 +180,7 @@ def calculate_route(
 
 
 def create_dataframe_from_results(route_results: list) -> pd.DataFrame:
-    """Create a DataFrame from given route results.
+    """Create a DataFrame from the given route results.
 
     Parameters
     ----------
@@ -216,7 +217,7 @@ def create_dataframe_from_results(route_results: list) -> pd.DataFrame:
     return pd.DataFrame(route_data)
 
 
-def cache_file_path(origin: Location, destination: Location, departure_time: tuple[int]) -> str:
+def cache_file_path(origin: Location, destination: Location, departure_time: tuple[int]) -> Path:
     """Generate a file path for caching route data based on the origin and destination coordinates.
 
     Parameters
@@ -230,8 +231,8 @@ def cache_file_path(origin: Location, destination: Location, departure_time: tup
 
     Returns
     -------
-    str
-        A string representing the path to the cache file, including a unique filename based on the
+    Path
+        A Path representing the path to the cache file, including a unique filename based on the
         latitude, longitude of origin, destination, and departure time.
 
     Notes
@@ -245,7 +246,7 @@ def cache_file_path(origin: Location, destination: Location, departure_time: tup
         f"route_{origin.lat}_{origin.lon}_to_"
         f"{destination.lat}_{destination.lon}_{departure_time_str}.json"
     )
-    return Path.join(_CACHE_FOLDER, filename)
+    return Path(_CACHE_FOLDER) / filename
 
 
 def save_to_cache(
@@ -302,8 +303,8 @@ def load_from_cache(
     Returns
     -------
     dict or None
-        If a cached exists for the specified route, returns the data in dictionary format.
-        If no cache exists for the route, returns None.
+        If a cache exists for the specified route, returns the data in dictionary format.
+        If no cache exists for the route returns None.
 
     """
     file_path = cache_file_path(origin, destination, departure_time)
@@ -390,15 +391,15 @@ def fetch_all_routes(
     return [data for _, data in sorted(results_with_keys, key=lambda x: x[0])]
 
 
-def route_api_call(api_key: str, departure_time: tuple[int]) -> pd.DataFrame:
-    """Call Google API with AIP key to get route information between two locations.
+def route_api_call(api_key: str, departure_date: str) -> pd.DataFrame:
+    """Call Google Routes API with an API key to get route information between two locations.
 
     Parameters
     ----------
     api_key : str
         A string representing the API key for accessing the Google Routes API.
-    departure_time : Tuple[int]
-        A single departure time in the format (year, month, day, hour, minute, second).
+    departure_date : str
+        A single departure date in the format `year-month-day`, e.g. "2024-02-01".
 
     Returns
     -------
@@ -411,7 +412,7 @@ def route_api_call(api_key: str, departure_time: tuple[int]) -> pd.DataFrame:
     origins = od_pairs[["oid", "oy", "ox"]]
     destinations = od_pairs[["did", "dy", "dx"]]
 
-    # convert origins, destinations to geodataframe
+    # convert origins, destinations to geo dataframe
     origins = gpd.GeoDataFrame(
         origins,
         geometry=[Point(xy) for xy in zip(origins.ox, origins.oy, strict=False)],
@@ -423,13 +424,15 @@ def route_api_call(api_key: str, departure_time: tuple[int]) -> pd.DataFrame:
 
     origins_location = parse_dataframe_to_locations(origins)
     destinations_location = parse_dataframe_to_locations(destinations)
+    # set to 3 am to get the minimally congested travel time
+    dep_time = (*tuple(map(int, departure_date)), 3, 0, 0)
 
     route_results = fetch_all_routes(
         api_key,
         origins_location,
         destinations_location,
         "TRAFFIC_AWARE",
-        [departure_time],
+        [dep_time] * min(len(origins_location), len(destinations_location)),
     )
     empty_index = [index for index, result in enumerate(route_results) if not result]
     od_pairs = od_pairs.drop(empty_index)
@@ -443,4 +446,6 @@ def route_api_call(api_key: str, departure_time: tuple[int]) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    route_api_call("API_KEY", (2024, 2, 1, 3, 0, 0))
+    api_key = sys.argv[1]
+    departure_date = sys.argv[2]
+    route_api_call(api_key, departure_date)
