@@ -32,6 +32,8 @@ NETWORK_ROUTING_RESULT_FILE_PATH = (
 )
 
 TRAFFIC_CONTROL_FILE_PATH = OUTPUT_DIR + "table1_traffic_controls.csv"
+COMBINED_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "table2_combined_evaluation_result.csv"
+
 
 RF_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "rf_prediction_result.csv"
 GB_PREDICTION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_prediction_result.csv"

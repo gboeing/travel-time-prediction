@@ -442,3 +442,21 @@ if __name__ == "__main__":
     adaboost(result)
     logger.info("adaboost done.")
     naive(result)
+
+    # combine evaluation result
+    file_paths = [
+        constants.NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH,
+        constants.RF_EVALUATION_RESULT_FILE_PATH,
+        constants.GB_EVALUATION_RESULT_FILE_PATH,
+        constants.DT_EVALUATION_RESULT_FILE_PATH,
+        constants.AB_EVALUATION_RESULT_FILE_PATH,
+    ]
+    df_list = [pd.read_csv(fp) for fp in file_paths]
+    combined_df = pd.concat(df_list, ignore_index=True)
+    combined_df = combined_df.iloc[:, 1:-1]
+    combined_df = combined_df[combined_df["Model"].str.contains("Tuned|^Naive$", regex=True)]
+    combined_df["MAPE (%)"] = combined_df["MAPE (%)"] * 100
+    combined_df["Model"] = combined_df["Model"].str.replace(" Tuned", "", regex=False)
+    combined_df["Model"] = combined_df["Model"].replace({"Naive": "Initial naïve"})
+    combined_df = combined_df.round(2)
+    combined_df.to_csv(constants.COMBINED_EVALUATION_RESULT_FILE_PATH)
