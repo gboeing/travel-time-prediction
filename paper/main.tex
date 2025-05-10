@@ -104,7 +104,7 @@ Travel time prediction underpins many transport planning processes and geographi
 
 Travel time is fundamentally a function of distance and speed, which itself is a function of speed limits, traffic controls, turns, and congestion. Although common \enquote{naïve} travel time prediction methods (which minimize travel distance or street segment traversal time) provide easy solutions, they ignore the other components and thus usually under-predict real-world driving travel time \citep{ludwig2023traffic,salonen2013modelling,yiannakoulias2013estimating}. However, as we will argue, minimally-congested travel time prediction offers an important yet under-realized middle ground: much more accurate predictions than naïve travel times, yet much lower data and computing requirements than real-time traffic-aware congested travel time prediction.
 
-To address the need for such a middle ground, this article contributes a novel accurate, easy-to-use, and free method of minimally-congested driving travel time prediction. Our results show a substantial improvement over traditional, naïve methods of travel time prediction common in the urban planning literature. As we shall show in this article, across the Los Angeles urban area, our average trip's travel time prediction differs from Google's \enquote{gold standard} prediction by only 0.38 seconds. In contrast, simple---but common in the literature---naïve travel time prediction minimizing max-speed edge traversal times under-predicts by 183.69 seconds on average.
+To address the need for such a middle ground, this article contributes a novel accurate, easy-to-use, and free method of minimally-congested driving travel time prediction. Our results show a substantial improvement over traditional, naïve methods of travel time prediction common in the urban planning literature. As we shall show in this article, across the Los Angeles urban area, our average trip's travel time prediction differs from Google's \enquote{gold standard} prediction by only 0.38 seconds. In contrast, simple---but common in the literature---naïve travel time prediction minimizing max-speed edge traversal times under-predicts by 183.68 seconds on average.
 
 The rest of this article is organized as follows. First it reviews the state of the art in travel time prediction and then considers the less-sophisticated methods that are standard in the current planning literature. Next it describes our proposed model, data sources, and validation techniques. Then it presents our findings, highlighting both the feasibility and quality of our predictions in relation to simple naïve predictions or difficult expensive predictions. Finally, it concludes with a discussion of implications for research and practice.
 
@@ -153,7 +153,7 @@ This article proposes a novel open-source, reusable, generalizable method\endnot
 
 \begin{figure*}[bt!]
     \centering
-    \includegraphics[width=1.0\textwidth]{fig_workflow.jpg}
+    \includegraphics[width=1.0\textwidth]{fig_workflow_larger_font.jpg}
     \caption{Detailed model workflow.}\label{fig:workflow}
 \end{figure*}
 
@@ -249,8 +249,8 @@ This final model trains an ensemble of decision trees to predict unobserved resp
         \toprule
         Model               & MAPE  & MAE    & MSE      & $\delta$ & $p$  & APR  & $R^2$ \\
         \midrule
-        Initial naïve       & 21.15 & 183.69 & 48214.06 &  -182.85 & <0.01 & 0.79 & 0.74  \\
-        \textbf{Random forest}       &  \textbf{8.42} &  \textbf{75.32} & \textbf{12154.79} &     \textbf{0.38} &  \textbf{0.76} & \textbf{1.01} & \textbf{0.93}  \\
+        Initial naïve       & 21.15 & 183.68 & 48214.06 &  -182.85 & <0.01 & 0.79 & 0.74  \\
+        \textbf{Random forest}       &  \textbf{8.41} &  \textbf{75.32} & \textbf{12154.79} &     \textbf{0.38} &  \textbf{0.76} & \textbf{1.01} & \textbf{0.93}  \\
         Gradient boosting   &  7.86 &  71.99 & 12630.03 &   -19.20 & <0.01 & 0.99 & 0.93  \\
         Decision trees      &  9.00 &  80.04 & 13570.17 &     0.13 &  0.92 & 1.01 & 0.93  \\
         AdaBoost            &  8.20 &  74.04 & 12424.14 &    -9.76 & <0.01 & 1.00 & 0.93  \\
@@ -282,7 +282,7 @@ This article introduced a better middle-ground method to simply but accurately p
 
 \section*{Data Availability Statement}
 
-The data that support the findings of this study are available at [OFFICIAL REPOSITORY URL REDACTED FOR ANONYMOUS PEER REVIEW.\@ REVIEWERS, PLEASE USE THIS ANONYMIZED URL FOR YOUR REVIEW INSTEAD:\@ https://figshare.com/s/0acd076b1a11286ff3e4].
+The code and data that support the findings of this study are available at [REDACTED]. Google's terms of use forbid publicly redistributing their data: for reproducibility purposes, those training data are available directly from the authors upon request. [Reviewers: please use this anonymized URL for your review: https://figshare.com/s/0acd076b1a11286ff3e4 We have submitted the training data file separately to the journal as supplementary material for review only, to abide by the terms of use.]
 %https://github.com/gboeing/travel-time-prediction
 
 \section*{Conflict of Interest Statement}
