@@ -1,21 +1,18 @@
-# Instructions on how to reproduce reported findings "Travel Time Prediction from Sparse Open Data"
+# Instructions on how to reproduce reported findings
 
 These instructions provide step-by-step guidance to reproduce findings reported in the paper, including
 - **Table 1. Traffic control elements summary**
 - **Table 2. Out-of-sample prediction accuracy of our chosen models**
 
-Simply change the current working directory under this folder, and in the shell run `source one_click_run.sh`.
+Change the current working directory to this folder, and in the terminal run `source one_click_run.sh`.
 
 ## Default Option: "One-Click Run" (Recommended)
-To reproduce the reported results, open a terminal in this directory and run:
-```bash
-source one_click_run.sh
-```
+To reproduce the reported results, open a terminal in this directory and run: `source one_click_run.sh`
 This option will
 - By default, bypass step 1 & 2 (`01-preprocess_input_data.py` and `02-routes_api.py`) and use instead our pre-queried intermediate data of
-  - Drivable street network from OpenStreetMap(OSM)
+  - Drivable street network from OpenStreetMap (OSM)
     - `data/intermediate/LA_clip_convex_strong_network_non_simplify_all_direction.graphml`
-  - Travel times from Google Routes API
+  - Travel times from Google Routes API, for training the model. Note that due to the source's terms of use, we cannot publicly redistribute these data. For peer review, we have submitted this file separately to the journal as "supplementary material for review only." For everyone else, these data (for reproducibility) are available upon request from the authors.
     - `data/intermediate/OD3am_routes_api.csv`
 
 - Then execute step 3 OD routing (`03-network_routing.py`) and step 4 modeling (`04-modeling.py`).
@@ -43,24 +40,21 @@ This option will
     - Output: `data/output/table2_combined_evaluation_result.csv`
   - Approximate runtime: ~1 hour
 
-## Alternative Option: Full Pipeline Run-through with Re-query (Not Recommended)
+## Alternative Option: Full Pipeline Run-through with Re-query (NOT Recommended)
 
 This option will
-- Rerun the entire workflow from processing raw input data and re-querying street network from OSM and travel time from Google Routes API:
+- Rerun the entire workflow from processing raw input data and re-querying street network from OSM and travel time from Google Routes API: `source one_click_run.sh --requery your_own_google_api_key 2025-05-01`
+- Replace `your_own_google_api_key`with your Google API Key
+- Replace `2025-05-01` with any date in the future to query travel time at 3 am.
 
-```bash
-source one_click_run.sh --requery your_own_google_api_key 2024-02-01
-```
-- Replace`your_own_google_api_key`with your Google API Key
-- Replace `2024-02-01` with any date in the future to query travel time at 3 am.
-We do not recommend this option because:
-  - First, it will provide different results compared with our study, as our results are based on the pre-queried OpenStreetMap and Google Routes API in late 2023 and early 2024.
-  - Second, you need to bring an API key to query Google Routes API, and Google is likely to charge for the usage.
+We do not recommend this option for reproducibility because:
+  - First, it may provide different results compared with our study, as the numbers surely change slightly from one day to another.
+  - Second, you need to bring an API key to query Google Routes API.
 
-- #### Step 1 pre-process input data (`01-preprocess_input_data.py`)
-  - Preprocesses the input data, re-queries drivable street network from OSM (will differ from ours), and re-samples OD pairs (will differ from our paper).
-- #### Step 2 query Google routes' API's travel time (`02-routes_api.py`)
-  - Re-queries Google Routes API for travel times (requires your Google API key which may incur costs, and the result will differ from ours due to different query times).
+### Step 1 pre-process input data (`01-preprocess_input_data.py`)
+  - Preprocesses the input (prediction) data, re-queries drivable street network from OSM (will differ from ours), and re-samples OD pairs (will differ from our paper).
+### Step 2 query Google routes' API's travel time (`02-routes_api.py`)
+  - Re-queries Google Routes API for (training) travel times.
 
 ## Folder Structure
 ```text
@@ -97,5 +91,4 @@ We do not recommend this option because:
     ├── 02-routes_api.py
     ├── 03-network_routing.py
     ├── 04-modeling.py
-    ├── constants.py
-    └── README.md
+    └── constants.py
