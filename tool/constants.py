@@ -44,3 +44,9 @@ GB_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "gb_evaluation_result.csv"
 AB_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "ab_evaluation_result.csv"
 DT_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "dt_evaluation_result.csv"
 NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "naive_evaluation_result.csv"
+
+SHAP_BEESWARM = OUTPUT_DIR + "rf_beeswarm_full.png"
+SHAP_IMPORTANCE = OUTPUT_DIR + "rf_feature_importance_full.png"
+SHAP_STATS = OUTPUT_DIR + "rf_shap_summary_stats_full.csv"
+
+
