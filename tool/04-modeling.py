@@ -71,66 +71,6 @@ def dataset_split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Seri
     )
 
 
-def _fit_tree_explainer(
-    model: RandomForestRegressor,
-    x_background: pd.DataFrame,
-) -> shap.TreeExplainer:
-    """Initialize a SHAP TreeExplainer for a tree-based model.
-
-    This uses interventional TreeSHAP with the training data as the
-    background dataset.
-
-    Parameters
-    ----------
-    model :
-        Fitted model (e.g., RandomForestRegressor) to explain.
-    x_background : pandas.DataFrame
-        Background data used by TreeSHAP (training set).
-
-    Returns
-    -------
-    explainer : shap.TreeExplainer
-        A SHAP TreeExplainer object that can be called on new data to
-        compute SHAP values.
-
-    """
-    logger = logging.getLogger("tool")
-    logger.info(
-        "Initializing TreeExplainer with interventional perturbation",
-    )
-
-    return shap.TreeExplainer(
-        model,
-        data=x_background,
-        feature_perturbation="interventional",
-    )
-
-
-def _compute_shap_values(explainer: shap.TreeExplainer, x: pd.DataFrame) -> shap.Explanation:
-    """Compute SHAP values for a set of observations.
-
-    This calls the SHAP explainer on the feature matrix ``X`` and
-    returns the resulting SHAP values (one value per feature per row).
-
-    Parameters
-    ----------
-    explainer : shap.TreeExplainer
-        Fitted SHAP explainer for the model of interest.
-    x : pd.DataFrame
-        Feature matrix on which to compute SHAP values.
-
-    Returns
-    -------
-    shap_values : shap.Explanation
-        SHAP values for each observation and feature.
-
-    """
-    logger = logging.getLogger("tool")
-    shap_values = explainer(x)
-    logger.info("Computed SHAP values using new explainer() API.")
-    return shap_values
-
-
 def model_evaluation(y: pd.Series, predictions: pd.Series, model_name: str) -> pd.DataFrame:
     """Evaluate the model prediction accuracy.
 
@@ -237,10 +177,13 @@ def random_forest(df: pd.DataFrame) -> None:
     logger.info("Starting SHAP analysis for Random Forest...")
 
     # use training set as background to build tree SHAP explainer
-    explainer = _fit_tree_explainer(best_random, x_train)
-
+    explainer = shap.TreeExplainer(
+        best_random,
+        data=x_train,
+        feature_perturbation="interventional",
+    )
     logger.info("Calculating SHAP values for full sample...")
-    shap_values = _compute_shap_values(explainer, x_full)
+    shap_values = explainer(x_full)
     logger.info("SHAP values for full sample calculated.")
 
     # Beeswarm plot
@@ -249,7 +192,7 @@ def random_forest(df: pd.DataFrame) -> None:
     plt.title("SHAP Beeswarm Plot (Random Forest Tuned, full sample)")
     plt.savefig(constants.SHAP_BEESWARM, bbox_inches="tight")
     plt.close()
-    logger.info("SHAP beeswarm plot saved to %s", {constants.SHAP_BEESWARM})
+    logger.info("SHAP beeswarm plot saved to %s", constants.SHAP_BEESWARM)
 
     # Global feature importance bar plot
     plt.figure()
@@ -257,7 +200,7 @@ def random_forest(df: pd.DataFrame) -> None:
     plt.title("SHAP Global Feature Importance (Random Forest Tuned, full sample)")
     plt.savefig(constants.SHAP_IMPORTANCE, bbox_inches="tight")
     plt.close()
-    logger.info("SHAP feature importance plot saved to %s", {constants.SHAP_IMPORTANCE})
+    logger.info("SHAP feature importance plot saved to %s", constants.SHAP_IMPORTANCE)
 
     # SHAP summary statistics
     logger.info("Calculating SHAP summary statistics for full sample...")
@@ -280,7 +223,7 @@ def random_forest(df: pd.DataFrame) -> None:
     ).sort_values(by="mean_abs_shap_value", ascending=False)
 
     stats_df.to_csv(constants.SHAP_STATS, index=False)
-    logger.info("SHAP summary statistics saved to %s", {constants.SHAP_STATS})
+    logger.info("SHAP summary statistics saved to %s", constants.SHAP_STATS)
 
 
 def gradient_boost(df: pd.DataFrame) -> None:
@@ -512,7 +455,7 @@ def adaboost(df: pd.DataFrame) -> None:
 
 
 def naive(df: pd.DataFrame) -> None:
-    """Evaluate native travel time against Google travel time.
+    """Evaluate naive travel time against Google travel time.
 
     Parameters
     ----------
