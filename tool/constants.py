@@ -48,5 +48,3 @@ NETWORK_ROUTING_EVALUATION_RESULT_FILE_PATH = OUTPUT_DIR + "naive_evaluation_res
 SHAP_BEESWARM = OUTPUT_DIR + "rf_beeswarm_full.png"
 SHAP_IMPORTANCE = OUTPUT_DIR + "rf_feature_importance_full.png"
 SHAP_STATS = OUTPUT_DIR + "rf_shap_summary_stats_full.csv"
-
-

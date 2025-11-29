@@ -5,8 +5,10 @@
 import logging
 
 import constants
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import shap
 from scipy import stats
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.metrics import (
@@ -17,8 +19,6 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import KFold, RandomizedSearchCV, cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeRegressor
-import shap
-import matplotlib.pyplot as plt
 
 _FEATURES_LIST = [
     "signal_count",
@@ -71,7 +71,10 @@ def dataset_split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Seri
     )
 
 
-def _fit_tree_explainer(model, X_background):
+def _fit_tree_explainer(
+    model: RandomForestRegressor,
+    x_background: pd.DataFrame,
+) -> shap.TreeExplainer:
     """Initialize a SHAP TreeExplainer for a tree-based model.
 
     This uses interventional TreeSHAP with the training data as the
@@ -81,7 +84,7 @@ def _fit_tree_explainer(model, X_background):
     ----------
     model :
         Fitted model (e.g., RandomForestRegressor) to explain.
-    X_background : pandas.DataFrame or numpy.ndarray
+    x_background : pandas.DataFrame
         Background data used by TreeSHAP (training set).
 
     Returns
@@ -89,21 +92,21 @@ def _fit_tree_explainer(model, X_background):
     explainer : shap.TreeExplainer
         A SHAP TreeExplainer object that can be called on new data to
         compute SHAP values.
+
     """
     logger = logging.getLogger("tool")
     logger.info(
-        "Initializing TreeExplainer with interventional perturbation"
+        "Initializing TreeExplainer with interventional perturbation",
     )
 
-    explainer = shap.TreeExplainer(
+    return shap.TreeExplainer(
         model,
-        data=X_background,
+        data=x_background,
         feature_perturbation="interventional",
     )
-    return explainer
 
 
-def _compute_shap_values(explainer, X):
+def _compute_shap_values(explainer: shap.TreeExplainer, x: pd.DataFrame) -> shap.Explanation:
     """Compute SHAP values for a set of observations.
 
     This calls the SHAP explainer on the feature matrix ``X`` and
@@ -113,18 +116,20 @@ def _compute_shap_values(explainer, X):
     ----------
     explainer : shap.TreeExplainer
         Fitted SHAP explainer for the model of interest.
-    X : pandas.DataFrame or numpy.ndarray
+    x : pd.DataFrame
         Feature matrix on which to compute SHAP values.
 
     Returns
     -------
     shap_values : shap.Explanation
         SHAP values for each observation and feature.
+
     """
     logger = logging.getLogger("tool")
-    shap_values = explainer(X)
+    shap_values = explainer(x)
     logger.info("Computed SHAP values using new explainer() API.")
     return shap_values
+
 
 def model_evaluation(y: pd.Series, predictions: pd.Series, model_name: str) -> pd.DataFrame:
     """Evaluate the model prediction accuracy.
@@ -158,8 +163,7 @@ def model_evaluation(y: pd.Series, predictions: pd.Series, model_name: str) -> p
 
 
 def random_forest(df: pd.DataFrame) -> None:
-    """Build and tune a random forest model to predict Google travel time
-    and compute SHAP explanations.
+    """Build and tune a random forest model to predict travel time and compute SHAP.
 
     Parameters
     ----------
@@ -215,7 +219,7 @@ def random_forest(df: pd.DataFrame) -> None:
 
     best_random.fit(x_train, y_train)
     tuned_y_pred = best_random.predict(x_test)
-    X_full = df[_FEATURES_LIST]
+    x_full = df[_FEATURES_LIST]
     tuned_evaluation = model_evaluation(y_test, tuned_y_pred, "Random Forest Tuned")
     tuned_evaluation["cross_val_score"] = [
         cross_val_score(
@@ -236,45 +240,48 @@ def random_forest(df: pd.DataFrame) -> None:
     explainer = _fit_tree_explainer(best_random, x_train)
 
     logger.info("Calculating SHAP values for full sample...")
-    shap_values = _compute_shap_values(explainer, X_full)
+    shap_values = _compute_shap_values(explainer, x_full)
     logger.info("SHAP values for full sample calculated.")
 
     # Beeswarm plot
     plt.figure()
-    shap.summary_plot(shap_values, X_full, show=False, cmap=plt.get_cmap("plasma"),)
+    shap.summary_plot(shap_values, x_full, show=False, cmap=plt.get_cmap("plasma"))
     plt.title("SHAP Beeswarm Plot (Random Forest Tuned, full sample)")
     plt.savefig(constants.SHAP_BEESWARM, bbox_inches="tight")
     plt.close()
-    logger.info(f"SHAP beeswarm plot saved to {constants.SHAP_BEESWARM}")
+    logger.info("SHAP beeswarm plot saved to %s", {constants.SHAP_BEESWARM})
 
     # Global feature importance bar plot
     plt.figure()
-    shap.summary_plot(shap_values, X_full, plot_type="bar", show=False, cmap=plt.get_cmap("plasma"),)
+    shap.summary_plot(shap_values, x_full, plot_type="bar", show=False, cmap=plt.get_cmap("plasma"))
     plt.title("SHAP Global Feature Importance (Random Forest Tuned, full sample)")
     plt.savefig(constants.SHAP_IMPORTANCE, bbox_inches="tight")
     plt.close()
-    logger.info(f"SHAP feature importance plot saved to {constants.SHAP_IMPORTANCE}")
+    logger.info("SHAP feature importance plot saved to %s", {constants.SHAP_IMPORTANCE})
 
     # SHAP summary statistics
     logger.info("Calculating SHAP summary statistics for full sample...")
     try:
-        shap_values_data = shap_values.values  # Explanation object
+        shap_values_data = shap_values.values  # noqa: PD011 # shap_values is shap.Explanation, not pandas.DataFrame
     except AttributeError:
         shap_values_data = shap_values  # numpy array fallback
 
-    shap_df = pd.DataFrame(shap_values_data, columns=X_full.columns)
+    shap_df = pd.DataFrame(shap_values_data, columns=x_full.columns)
 
-    stats_df = pd.DataFrame({
-        "feature": X_full.columns,
-        "mean_shap_value": shap_df.mean(),
-        "median_shap_value": shap_df.median(),
-        "mean_abs_shap_value": shap_df.abs().mean(),
-        "min_shap_value": shap_df.min(),
-        "max_shap_value": shap_df.max(),
-    }).sort_values(by="mean_abs_shap_value", ascending=False)
+    stats_df = pd.DataFrame(
+        {
+            "feature": x_full.columns,
+            "mean_shap_value": shap_df.mean(),
+            "median_shap_value": shap_df.median(),
+            "mean_abs_shap_value": shap_df.abs().mean(),
+            "min_shap_value": shap_df.min(),
+            "max_shap_value": shap_df.max(),
+        },
+    ).sort_values(by="mean_abs_shap_value", ascending=False)
 
     stats_df.to_csv(constants.SHAP_STATS, index=False)
-    logger.info(f"SHAP summary statistics saved to {constants.SHAP_STATS}")
+    logger.info("SHAP summary statistics saved to %s", {constants.SHAP_STATS})
+
 
 def gradient_boost(df: pd.DataFrame) -> None:
     """Build and tune a gradient boosting model to predict Google travel time.
