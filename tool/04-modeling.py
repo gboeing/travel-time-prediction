@@ -211,7 +211,7 @@ def random_forest(df: pd.DataFrame) -> None:
     )
     rf_random.fit(x_train, y_train)
     pd.DataFrame([rf_random.best_params_]).to_csv(constants.BEST_RF_RANDOM_PARAM_FILE_PATH)
-    best_random = RandomForestRegressor(**rf_random.best_params_)
+    best_random = RandomForestRegressor(**rf_random.best_params_, random_state=123)
 
     best_random.fit(x_train, y_train)
     tuned_y_pred = best_random.predict(x_test)
@@ -333,7 +333,7 @@ def gradient_boost(df: pd.DataFrame) -> None:
     )
     gb_random.fit(x_train, y_train)
     pd.DataFrame([gb_random.best_params_]).to_csv(constants.BEST_GB_RANDOM_PARAM_FILE_PATH)
-    best_random = GradientBoostingRegressor(**gb_random.best_params_)
+    best_random = GradientBoostingRegressor(**gb_random.best_params_, random_state=123)
     best_random.fit(x_train, y_train)
     tuned_y_pred = best_random.predict(x_test)
     tuned_evaluation = model_evaluation(y_test, tuned_y_pred, "Gradient Boosting Tuned")
