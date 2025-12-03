@@ -580,11 +580,7 @@ def calculate(  # noqa: C901, PLR0913, PLR0912
     )
 
 
-def run_single_network(
-    network_path: str,
-    traffic_control_path: str,
-    routing_result_path: str,
-) -> None:
+def run_single_network() -> None:
     """Run the routing workflow for a single network.
 
     Parameters
@@ -600,6 +596,10 @@ def run_single_network(
     # number of cpus used for running
 
     cpus = mp.cpu_count() - 6
+
+    network_path = str(constants.ROUTING_NETWORK_READ_PATH)
+    routing_result_path = str(constants.ROUTING_RESULT_FILE_PATH)
+    traffic_control_path = str(constants.TRAFFIC_CONTROL_FILE_PATH)
 
     # set up the traffic control penalties (in seconds)
     traffic_time_config = {
@@ -695,12 +695,10 @@ def run_single_network(
         for i in range(len(od_pair_sample))
     )
 
-    pool = mp.Pool(cpus)
-    res = pool.starmap_async(calculate, args)
-    all_results = res.get()
-
-    pool.close()
-    pool.join()
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(cpus) as pool:
+        res = pool.starmap_async(calculate, args)
+        all_results = res.get()
 
     all_results_df = pd.DataFrame(
         all_results,
@@ -734,28 +732,5 @@ def run_single_network(
     all_results_df.to_csv(routing_result_path, index=False)
 
 
-def run() -> None:
-    """Run the routing workflow for both 2023 baseline and 2025 robustness networks.
-
-    Returns
-    -------
-    None
-
-    """
-    # baseline: 2023 network
-    run_single_network(
-        constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH_2023,
-        constants.TRAFFIC_CONTROL_FILE_PATH,
-        constants.NETWORK_ROUTING_RESULT_FILE_PATH,
-    )
-
-    # robustness: 2025 network
-    run_single_network(
-        constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH_2025,
-        constants.TRAFFIC_CONTROL_FILE_PATH_2025,
-        constants.NETWORK_ROUTING_RESULT_FILE_PATH_2025,
-    )
-
-
 if __name__ == "__main__":
-    run()
+    run_single_network()
