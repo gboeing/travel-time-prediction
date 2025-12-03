@@ -580,12 +580,21 @@ def calculate(  # noqa: C901, PLR0913, PLR0912
     )
 
 
-def run() -> None:
-    """Run the routing algorithm for the given OD pairs and save the results to a csv file.
+def run_single_network(
+    network_path: str,
+    traffic_control_path: str,
+    routing_result_path: str,
+) -> None:
+    """Run the routing workflow for a single network.
 
-    Returns
-    -------
-    None
+    Parameters
+    ----------
+    network_path : str
+        Path to the GraphML file of the clipped OSM network.
+    traffic_control_path : str
+        Output CSV path for the traffic control summary table.
+    routing_result_path : str
+        Output CSV path for the OD routing results used for modeling.
 
     """
     # number of cpus used for running
@@ -603,7 +612,7 @@ def run() -> None:
 
     od_pair_sample = pd.read_csv(constants.SAMPLED_OD_ROUTES_API_FILE_PATH)
 
-    graph = ox.io.load_graphml(constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH)
+    graph = ox.io.load_graphml(network_path)
     resim_graph = ox.simplification.simplify_graph(graph)
     simplify_nodes, simplify_edges = ox.graph_to_gdfs(resim_graph)
     # statistics for table 1
@@ -639,7 +648,7 @@ def run() -> None:
         {"Element": "Total nodes", "Count": total_nodes},
     ]
     tc_df = pd.DataFrame(tc_rows)
-    tc_df.to_csv(constants.TRAFFIC_CONTROL_FILE_PATH, index=False)
+    tc_df.to_csv(traffic_control_path, index=False)
 
     valid_nodes = set(graph.nodes)
 
@@ -722,7 +731,30 @@ def run() -> None:
         ],
     )
 
-    all_results_df.to_csv(constants.NETWORK_ROUTING_RESULT_FILE_PATH)
+    all_results_df.to_csv(routing_result_path, index=False)
+
+
+def run() -> None:
+    """Run the routing workflow for both 2023 baseline and 2025 robustness networks.
+
+    Returns
+    -------
+    None
+
+    """
+    # baseline: 2023 network
+    run_single_network(
+        constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH_2023,
+        constants.TRAFFIC_CONTROL_FILE_PATH,
+        constants.NETWORK_ROUTING_RESULT_FILE_PATH,
+    )
+
+    # robustness: 2025 network
+    run_single_network(
+        constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH_2025,
+        constants.TRAFFIC_CONTROL_FILE_PATH_2025,
+        constants.NETWORK_ROUTING_RESULT_FILE_PATH_2025,
+    )
 
 
 if __name__ == "__main__":
