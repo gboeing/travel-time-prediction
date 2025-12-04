@@ -22,13 +22,6 @@ while [[ "$#" -gt 0 ]]; do
       python3 tool/02-routes_api.py "$2" "$3"
 
       echo ">>> Data requery done. Switching to 'working' mode."
-
-      # Create a separate 'working' directory to avoid overwriting 2023/2025 baselines
-      mkdir -p data/intermediate/working
-
-      mv "data/intermediate/LA_clip_convex_strong_network_non_simplify_all_direction_working.graphml" \
-         "data/intermediate/working/LA_clip_convex_strong_network_non_simplify_all_direction_working.graphml"
-
       YEARS=("working")
 
       shift 3 ;;
