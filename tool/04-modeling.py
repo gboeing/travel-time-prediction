@@ -493,9 +493,15 @@ def naive(df: pd.DataFrame) -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[
+            logging.FileHandler("tool.log", mode="w"),  # write in log
+            logging.StreamHandler(),  # print on screen
+        ],
+    )
     logger = logging.getLogger("tool")
-    logging.basicConfig(filename="tool.log", filemode="w", level=logging.INFO)
-    logger.setLevel(logging.INFO)
 
     cv_logger = logging.getLogger("cv")
     cv_logger.setLevel(logging.WARNING)

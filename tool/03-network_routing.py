@@ -2,11 +2,13 @@
 
 """Calculating the travel time and distance of OD in a graph based on routing algorithms."""
 
+import logging
 import multiprocessing as mp
 import warnings
 from collections import Counter
 from heapq import heappop, heappush
 from itertools import count
+from os import getenv
 
 import constants
 import networkx as nx
@@ -595,11 +597,15 @@ def run_single_network() -> None:
     """
     # number of cpus used for running
 
+    logger = logging.getLogger("tool")
     cpus = mp.cpu_count() - 6
 
     network_path = str(constants.ROUTING_NETWORK_READ_PATH)
     routing_result_path = str(constants.ROUTING_RESULT_FILE_PATH)
     traffic_control_path = str(constants.TRAFFIC_CONTROL_FILE_PATH)
+
+    logger.info("Loading Network: %s", network_path)
+    logger.info("Saving Results to: %s", routing_result_path)
 
     # set up the traffic control penalties (in seconds)
     traffic_time_config = {
@@ -611,6 +617,10 @@ def run_single_network() -> None:
     }
 
     od_pair_sample = pd.read_csv(constants.SAMPLED_OD_ROUTES_API_FILE_PATH)
+
+    if getenv("TTP_TEST") == "true":
+        logger.warning("TEST MODE ACTIVATED: Only processing first 500 rows!")
+        od_pair_sample = od_pair_sample.head(500)
 
     graph = ox.io.load_graphml(network_path)
     resim_graph = ox.simplification.simplify_graph(graph)
@@ -733,4 +743,5 @@ def run_single_network() -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     run_single_network()
