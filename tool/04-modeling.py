@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
-"""Building random forest model to predict Google travel time."""
+"""Building random forest model to predict Google travel time and compute SHAP explanations."""
 
 import logging
+from pathlib import Path
 
 import constants
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import shap
 from scipy import stats
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.metrics import (
@@ -48,19 +51,36 @@ def read_result() -> pd.DataFrame:
 
 
 def dataset_split(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """Split 80% train and 20% test set.
+    """Split train/test set logic (Updated for 2023/2025 compatibility)."""
+    logger = logging.getLogger("tool")
 
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Combined result of naive travel time, turns and traffic controls, and Google travel time.
+    if constants.CREATE_SPLIT_MAP:
+        # 2023: create and save
+        logger.info("Creating NEW split map at %s", constants.MAP_PATH)
+        train, test = train_test_split(df, test_size=0.2, random_state=123)
 
-    Returns
-    -------
-    a tuple of pandas dataframes and pandas series of test set and train set.
+        split_map = pd.concat(
+            [
+                train[["oid", "did"]].assign(split_type="train"),
+                test[["oid", "did"]].assign(split_type="test"),
+            ],
+        )
 
-    """
-    train, test = train_test_split(df, test_size=0.2, random_state=123)
+        Path(constants.MAP_PATH).parent.mkdir(parents=True, exist_ok=True)
+        split_map.to_csv(constants.MAP_PATH, index=False)
+
+    else:
+        # 2025: read the existing split map.
+        logger.info("Loading EXISTING split map from %s", constants.MAP_PATH)
+        if not Path(constants.MAP_PATH).exists():
+            logger.error("Split map not found at %s. Please run 2023 first.", constants.MAP_PATH)
+            raise FileNotFoundError
+
+        split_map = pd.read_csv(constants.MAP_PATH)
+        df_merged = df.merge(split_map, on=["oid", "did"], how="inner")
+        train = df_merged[df_merged["split_type"] == "train"]
+        test = df_merged[df_merged["split_type"] == "test"]
+
     return (
         train[_FEATURES_LIST],
         train[_PREDICT_VARIABLE],
@@ -101,7 +121,7 @@ def model_evaluation(y: pd.Series, predictions: pd.Series, model_name: str) -> p
 
 
 def random_forest(df: pd.DataFrame) -> None:
-    """Build and tune a random forest model to predict Google travel time.
+    """Build and tune a random forest model to predict travel time and compute SHAP.
 
     Parameters
     ----------
@@ -153,10 +173,11 @@ def random_forest(df: pd.DataFrame) -> None:
     )
     rf_random.fit(x_train, y_train)
     pd.DataFrame([rf_random.best_params_]).to_csv(constants.BEST_RF_RANDOM_PARAM_FILE_PATH)
-    best_random = RandomForestRegressor(**rf_random.best_params_)
+    best_random = RandomForestRegressor(**rf_random.best_params_, random_state=123)
 
     best_random.fit(x_train, y_train)
     tuned_y_pred = best_random.predict(x_test)
+    x_full = df[_FEATURES_LIST]
     tuned_evaluation = model_evaluation(y_test, tuned_y_pred, "Random Forest Tuned")
     tuned_evaluation["cross_val_score"] = [
         cross_val_score(
@@ -169,6 +190,58 @@ def random_forest(df: pd.DataFrame) -> None:
     ]
 
     pd.concat([base_evaluation, tuned_evaluation]).to_csv(constants.RF_EVALUATION_RESULT_FILE_PATH)
+
+    logger = logging.getLogger("tool")
+    logger.info("Starting SHAP analysis for Random Forest...")
+
+    # use training set as background to build tree SHAP explainer
+    explainer = shap.TreeExplainer(
+        best_random,
+        data=x_train,
+        feature_perturbation="interventional",
+    )
+    logger.info("Calculating SHAP values for full sample...")
+    shap_values = explainer(x_full)
+    logger.info("SHAP values for full sample calculated.")
+
+    # Beeswarm plot
+    plt.figure()
+    shap.summary_plot(shap_values, x_full, show=False, cmap=plt.get_cmap("plasma"))
+    plt.title("SHAP Beeswarm Plot (Random Forest Tuned, full sample)")
+    plt.savefig(constants.SHAP_BEESWARM, bbox_inches="tight")
+    plt.close()
+    logger.info("SHAP beeswarm plot saved to %s", constants.SHAP_BEESWARM)
+
+    # Global feature importance bar plot
+    plt.figure()
+    shap.summary_plot(shap_values, x_full, plot_type="bar", show=False, cmap=plt.get_cmap("plasma"))
+    plt.title("SHAP Global Feature Importance (Random Forest Tuned, full sample)")
+    plt.savefig(constants.SHAP_IMPORTANCE, bbox_inches="tight")
+    plt.close()
+    logger.info("SHAP feature importance plot saved to %s", constants.SHAP_IMPORTANCE)
+
+    # SHAP summary statistics
+    logger.info("Calculating SHAP summary statistics for full sample...")
+    try:
+        shap_values_data = shap_values.values  # noqa: PD011 # shap_values is shap.Explanation, not pandas.DataFrame
+    except AttributeError:
+        shap_values_data = shap_values  # numpy array fallback
+
+    shap_df = pd.DataFrame(shap_values_data, columns=x_full.columns)
+
+    stats_df = pd.DataFrame(
+        {
+            "feature": x_full.columns,
+            "mean_shap_value": shap_df.mean(),
+            "median_shap_value": shap_df.median(),
+            "mean_abs_shap_value": shap_df.abs().mean(),
+            "min_shap_value": shap_df.min(),
+            "max_shap_value": shap_df.max(),
+        },
+    ).sort_values(by="mean_abs_shap_value", ascending=False)
+
+    stats_df.to_csv(constants.SHAP_STATS, index=False)
+    logger.info("SHAP summary statistics saved to %s", constants.SHAP_STATS)
 
 
 def gradient_boost(df: pd.DataFrame) -> None:
@@ -228,7 +301,7 @@ def gradient_boost(df: pd.DataFrame) -> None:
     )
     gb_random.fit(x_train, y_train)
     pd.DataFrame([gb_random.best_params_]).to_csv(constants.BEST_GB_RANDOM_PARAM_FILE_PATH)
-    best_random = GradientBoostingRegressor(**gb_random.best_params_)
+    best_random = GradientBoostingRegressor(**gb_random.best_params_, random_state=123)
     best_random.fit(x_train, y_train)
     tuned_y_pred = best_random.predict(x_test)
     tuned_evaluation = model_evaluation(y_test, tuned_y_pred, "Gradient Boosting Tuned")
@@ -400,7 +473,7 @@ def adaboost(df: pd.DataFrame) -> None:
 
 
 def naive(df: pd.DataFrame) -> None:
-    """Evaluate native travel time against Google travel time.
+    """Evaluate naive travel time against Google travel time.
 
     Parameters
     ----------
@@ -420,9 +493,15 @@ def naive(df: pd.DataFrame) -> None:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[
+            logging.FileHandler("tool.log", mode="w"),  # write in log
+            logging.StreamHandler(),  # print on screen
+        ],
+    )
     logger = logging.getLogger("tool")
-    logging.basicConfig(filename="tool.log", filemode="w", level=logging.INFO)
-    logger.setLevel(logging.INFO)
 
     cv_logger = logging.getLogger("cv")
     cv_logger.setLevel(logging.WARNING)

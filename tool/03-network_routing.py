@@ -2,11 +2,13 @@
 
 """Calculating the travel time and distance of OD in a graph based on routing algorithms."""
 
+import logging
 import multiprocessing as mp
 import warnings
 from collections import Counter
 from heapq import heappop, heappush
 from itertools import count
+from os import getenv
 
 import constants
 import networkx as nx
@@ -580,17 +582,30 @@ def calculate(  # noqa: C901, PLR0913, PLR0912
     )
 
 
-def run() -> None:
-    """Run the routing algorithm for the given OD pairs and save the results to a csv file.
+def run_single_network() -> None:
+    """Run the routing workflow for a single network.
 
-    Returns
-    -------
-    None
+    Parameters
+    ----------
+    network_path : str
+        Path to the GraphML file of the clipped OSM network.
+    traffic_control_path : str
+        Output CSV path for the traffic control summary table.
+    routing_result_path : str
+        Output CSV path for the OD routing results used for modeling.
 
     """
     # number of cpus used for running
 
+    logger = logging.getLogger("tool")
     cpus = mp.cpu_count() - 6
+
+    network_path = str(constants.ROUTING_NETWORK_READ_PATH)
+    routing_result_path = str(constants.ROUTING_RESULT_FILE_PATH)
+    traffic_control_path = str(constants.TRAFFIC_CONTROL_FILE_PATH)
+
+    logger.info("Loading Network: %s", network_path)
+    logger.info("Saving Results to: %s", routing_result_path)
 
     # set up the traffic control penalties (in seconds)
     traffic_time_config = {
@@ -603,7 +618,11 @@ def run() -> None:
 
     od_pair_sample = pd.read_csv(constants.SAMPLED_OD_ROUTES_API_FILE_PATH)
 
-    graph = ox.io.load_graphml(constants.LA_CLIP_CONVEX_NETWORK_GML_FILE_PATH)
+    if getenv("TTP_TEST") == "true":
+        logger.warning("TEST MODE ACTIVATED: Only processing first 500 rows!")
+        od_pair_sample = od_pair_sample.head(500)
+
+    graph = ox.io.load_graphml(network_path)
     resim_graph = ox.simplification.simplify_graph(graph)
     simplify_nodes, simplify_edges = ox.graph_to_gdfs(resim_graph)
     # statistics for table 1
@@ -639,7 +658,7 @@ def run() -> None:
         {"Element": "Total nodes", "Count": total_nodes},
     ]
     tc_df = pd.DataFrame(tc_rows)
-    tc_df.to_csv(constants.TRAFFIC_CONTROL_FILE_PATH, index=False)
+    tc_df.to_csv(traffic_control_path, index=False)
 
     valid_nodes = set(graph.nodes)
 
@@ -686,12 +705,10 @@ def run() -> None:
         for i in range(len(od_pair_sample))
     )
 
-    pool = mp.Pool(cpus)
-    res = pool.starmap_async(calculate, args)
-    all_results = res.get()
-
-    pool.close()
-    pool.join()
+    ctx = mp.get_context("spawn")
+    with ctx.Pool(cpus) as pool:
+        res = pool.starmap_async(calculate, args)
+        all_results = res.get()
 
     all_results_df = pd.DataFrame(
         all_results,
@@ -722,8 +739,9 @@ def run() -> None:
         ],
     )
 
-    all_results_df.to_csv(constants.NETWORK_ROUTING_RESULT_FILE_PATH)
+    all_results_df.to_csv(routing_result_path, index=False)
 
 
 if __name__ == "__main__":
-    run()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    run_single_network()
